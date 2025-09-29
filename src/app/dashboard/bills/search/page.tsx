@@ -88,6 +88,7 @@ export default function BillSearchPage() {
     try {
       setLoading(true);
       setErrorMessage(null);
+      setSearchResults([]);
       
       // Build URL exactly like the working test
       let url = '/api/openstates/bills?state=co';
@@ -100,19 +101,25 @@ export default function BillSearchPage() {
       console.log('Search URL:', url);
       
       const response = await fetch(url);
-      const data = await response.json();
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       console.log('Search response:', data);
       
-      if (data.success && data.data && data.data.length > 0) {
+      if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
         setSearchResults(data.data);
+        setErrorMessage(null);
       } else {
         setSearchResults([]);
         setErrorMessage(data.error || 'No bills found matching your search');
       }
     } catch (error) {
       console.error('Error searching bills:', error);
-      setErrorMessage('Failed to search bills');
+      setErrorMessage(`Failed to search bills: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
@@ -124,13 +131,13 @@ export default function BillSearchPage() {
     try {
       setLoading(true);
       
-      // Convert OpenStates bill to our format
+      // Convert OpenStates bill to our format with safe property access
       const billData = {
-        bill_number: selectedBill.identifier,
-        title: selectedBill.title,
-        sponsor: selectedBill.sponsors[0]?.name || 'Unknown',
+        bill_number: selectedBill.identifier || 'Unknown',
+        title: selectedBill.title || 'Unknown Title',
+        sponsor: selectedBill.sponsors?.[0]?.name || 'Unknown',
         status: 'Active' as 'Active' | 'Passed' | 'Failed',
-        last_action: selectedBill.actions[0]?.description || 'Introduced',
+        last_action: selectedBill.actions?.[0]?.description || selectedBill.latest_action_description || 'Introduced',
         position: newBill.position,
         priority: newBill.priority,
         client_id: newBill.client_id || undefined,
@@ -357,10 +364,10 @@ export default function BillSearchPage() {
               {selectedBill && (
                 <div className="space-y-4">
                   <div className="bg-slate-50 p-4 rounded-lg">
-                    <h3 className="font-semibold">{selectedBill.identifier}</h3>
-                    <p className="text-sm text-slate-600">{selectedBill.title}</p>
+                    <h3 className="font-semibold">{selectedBill.identifier || 'Unknown'}</h3>
+                    <p className="text-sm text-slate-600">{selectedBill.title || 'Unknown Title'}</p>
                     <p className="text-sm text-slate-500 mt-1">
-                      Sponsor: {selectedBill.sponsors[0]?.name || 'Unknown'}
+                      Sponsor: {selectedBill.sponsors?.[0]?.name || 'Unknown'}
                     </p>
                   </div>
                   
