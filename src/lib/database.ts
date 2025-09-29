@@ -22,6 +22,9 @@ export const billsDataService = {
           status: 'Active',
           last_action: 'Passed House Committee on Energy',
           position: 'Support',
+          priority: 'High',
+          watchlist: true,
+          client_id: null,
           ai_analysis: {
             executive_summary: 'This bill establishes ambitious renewable energy targets for Colorado, requiring utilities to achieve 80% clean energy by 2030 and 100% by 2040.',
             key_provisions: ['Sets 80% renewable energy target by 2030', 'Establishes 100% clean energy goal by 2040', 'Creates clean energy transition fund', 'Provides workforce development programs'],
@@ -40,6 +43,9 @@ export const billsDataService = {
           status: 'Active',
           last_action: 'Introduced in Senate',
           position: 'Monitor',
+          priority: 'Medium',
+          watchlist: false,
+          client_id: null,
           ai_analysis: {
             executive_summary: 'Expands Medicaid eligibility and creates a public option for health insurance coverage in Colorado.',
             key_provisions: ['Expands Medicaid to 138% of federal poverty level', 'Creates Colorado public option', 'Establishes prescription drug affordability board', 'Increases mental health coverage requirements'],
@@ -58,6 +64,9 @@ export const billsDataService = {
           status: 'Active',
           last_action: 'Passed House Judiciary Committee',
           position: 'Oppose',
+          priority: 'Low',
+          watchlist: false,
+          client_id: null,
           ai_analysis: {
             executive_summary: 'Comprehensive criminal justice reform including bail reform, sentencing guidelines, and reentry programs.',
             key_provisions: ['Eliminates cash bail for non-violent offenses', 'Establishes alternative sentencing programs', 'Creates reentry support services', 'Requires racial impact statements for new criminal laws'],
