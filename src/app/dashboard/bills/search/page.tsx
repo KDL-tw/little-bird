@@ -85,16 +85,19 @@ export default function BillSearchPage() {
   };
 
   const searchBills = async () => {
-    if (!searchTerm.trim()) return;
+    // Allow empty search to get recent bills
+    const query = searchTerm.trim() || 'recent';
     
     try {
       setLoading(true);
       setErrorMessage(null);
       
-      const response = await fetch(`/api/openstates/bills?q=${encodeURIComponent(searchTerm)}&state=co`);
+      const response = await fetch(`/api/openstates/bills?q=${encodeURIComponent(query)}&state=co&session=2024`);
       const data = await response.json();
       
-      if (data.success && data.data) {
+      console.log('Search response:', data);
+      
+      if (data.success && data.data && data.data.length > 0) {
         setSearchResults(data.data);
       } else {
         setSearchResults([]);
@@ -223,10 +226,10 @@ export default function BillSearchPage() {
                     onKeyPress={(e) => e.key === 'Enter' && searchBills()}
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end space-x-2">
                   <Button 
                     onClick={searchBills}
-                    disabled={!searchTerm.trim() || loading}
+                    disabled={loading}
                     className="bg-indigo-600 hover:bg-indigo-700"
                   >
                     {loading ? (
@@ -235,6 +238,16 @@ export default function BillSearchPage() {
                       <Search className="h-4 w-4 mr-2" />
                     )}
                     Search
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      searchBills();
+                    }}
+                    disabled={loading}
+                    variant="outline"
+                  >
+                    Get Recent Bills
                   </Button>
                 </div>
               </div>
