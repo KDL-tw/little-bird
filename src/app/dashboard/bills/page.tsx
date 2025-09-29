@@ -263,7 +263,8 @@ export default function BillsTracker() {
       title: '',
       sponsor: '',
       status: 'Active',
-      lastAction: ''
+      lastAction: '',
+      position: 'None'
     });
     setIsAddModalOpen(false);
   };
@@ -275,7 +276,8 @@ export default function BillsTracker() {
       title: bill.title,
       sponsor: bill.sponsor,
       status: bill.status,
-      lastAction: bill.lastAction
+      lastAction: bill.lastAction,
+      position: bill.position
     });
     setIsEditModalOpen(true);
   };
@@ -294,7 +296,8 @@ export default function BillsTracker() {
       title: '',
       sponsor: '',
       status: 'Active',
-      lastAction: ''
+      lastAction: '',
+      position: 'None'
     });
     setEditingBill(null);
     setIsEditModalOpen(false);
