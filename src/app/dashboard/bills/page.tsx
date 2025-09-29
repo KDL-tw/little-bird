@@ -1,57 +1,28 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Search, 
-  Plus, 
-  Star, 
-  Eye, 
-  EyeOff, 
-  FileText, 
-  Users, 
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  Sparkles,
-  Filter,
-  SortAsc,
-  SortDesc
-} from 'lucide-react';
-import { billsService, billNotesService, clientsService, userActionsService } from '@/lib/database';
+import { Search, Plus, Star, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { billsService, clientsService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Link from 'next/link';
-import type { Bill, BillNote, Client } from '@/lib/supabase';
+import type { Bill, Client } from '@/lib/supabase';
 
 export default function BillsPage() {
-  // Clean bills page - recreated from scratch
   const { user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [priorityFilter, setPriorityFilter] = useState<string>('All');
-  const [watchlistFilter, setWatchlistFilter] = useState<boolean | null>(null);
-  const [sortBy, setSortBy] = useState<'updated_at' | 'bill_number' | 'priority'>('updated_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
-  // Modal states
   const [addBillOpen, setAddBillOpen] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
-  const [billNotes, setBillNotes] = useState<BillNote[]>([]);
-  
-  // Form states
   const [newBill, setNewBill] = useState({
     bill_number: '',
     title: '',
@@ -62,11 +33,6 @@ export default function BillsPage() {
     client_id: '',
     last_action: ''
   });
-  
-  const [newNote, setNewNote] = useState('');
-  const [noteType, setNoteType] = useState('General');
-  
-  // Action states
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -91,42 +57,6 @@ export default function BillsPage() {
     }
   };
 
-  const filteredBills = useMemo(() => {
-    let filtered = bills.filter(bill => {
-      const matchesSearch = bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           bill.sponsor.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'All' || bill.status === statusFilter;
-      const matchesPriority = priorityFilter === 'All' || bill.priority === priorityFilter;
-      const matchesWatchlist = watchlistFilter === null || bill.watchlist === watchlistFilter;
-      
-      return matchesSearch && matchesStatus && matchesPriority && matchesWatchlist;
-    });
-
-    filtered.sort((a, b) => {
-      if (sortBy === 'priority') {
-        const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1, 'None': 0 };
-        const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-        const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-        
-        if (sortOrder === 'asc') {
-          return aPriority - bPriority;
-        } else {
-          return bPriority - aPriority;
-        }
-      }
-      
-      if (sortOrder === 'asc') {
-        return a[sortBy].localeCompare(b[sortBy]);
-      } else {
-        return b[sortBy].localeCompare(a[sortBy]);
-      }
-    });
-
-    return filtered;
-  }, [bills, searchTerm, statusFilter, priorityFilter, watchlistFilter, sortBy, sortOrder]);
-
   const handleAddBill = async () => {
     try {
       setActionLoading('add-bill');
@@ -144,16 +74,6 @@ export default function BillsPage() {
       });
       setAddBillOpen(false);
       setSuccessMessage('Bill added successfully!');
-
-      if (user?.id) {
-        await userActionsService.logAction({
-          user_id: user.id,
-          action_type: 'create',
-          entity_type: 'bill',
-          entity_id: bill.id,
-          details: { bill_number: bill.bill_number }
-        });
-      }
     } catch (error) {
       console.error('Error adding bill:', error);
       setErrorMessage('Failed to add bill');
@@ -162,105 +82,12 @@ export default function BillsPage() {
     }
   };
 
-  const handleUpdatePriority = async (billId: string, priority: 'High' | 'Medium' | 'Low' | 'None') => {
-    try {
-      setActionLoading(billId);
-      await billsService.updatePriority(billId, priority);
-      setBills(prev => prev.map(bill => 
-        bill.id === billId ? { ...bill, priority } : bill
-      ));
-      setSuccessMessage(`Bill priority updated to ${priority}!`);
-
-      if (user?.id) {
-        await userActionsService.logAction({
-          user_id: user.id,
-          action_type: 'update',
-          entity_type: 'bill',
-          entity_id: billId,
-          details: { priority }
-        });
-      }
-    } catch (error) {
-      console.error('Error updating priority:', error);
-      setErrorMessage('Failed to update priority');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleToggleWatchlist = async (billId: string) => {
-    try {
-      setActionLoading(billId);
-      const bill = bills.find(b => b.id === billId);
-      if (!bill) return;
-      
-      await billsService.toggleWatchlist(billId, !bill.watchlist);
-      setBills(prev => prev.map(b => 
-        b.id === billId ? { ...b, watchlist: !b.watchlist } : b
-      ));
-      setSuccessMessage(`Bill ${!bill.watchlist ? 'added to' : 'removed from'} watchlist!`);
-
-      if (user?.id) {
-        await userActionsService.logAction({
-          user_id: user.id,
-          action_type: 'update',
-          entity_type: 'bill',
-          entity_id: billId,
-          details: { watchlist: !bill.watchlist }
-        });
-      }
-    } catch (error) {
-      console.error('Error toggling watchlist:', error);
-      setErrorMessage('Failed to update watchlist');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!selectedBill || !newNote.trim()) return;
-    
-    try {
-      setActionLoading('add-note');
-      const note = await billNotesService.create({
-        bill_id: selectedBill.id,
-        content: newNote,
-        author: user?.email || 'Unknown',
-        note_type: noteType as any
-      });
-      setBillNotes(prev => [note, ...prev]);
-      setNewNote('');
-      setNoteType('General');
-      setSuccessMessage('Note added successfully!');
-
-      if (user?.id) {
-        await userActionsService.logAction({
-          user_id: user.id,
-          action_type: 'create',
-          entity_type: 'bill_note',
-          entity_id: note.id,
-          details: { note_type: noteType }
-        });
-      }
-    } catch (error) {
-      console.error('Error adding note:', error);
-      setErrorMessage('Failed to add note');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const openNotesModal = async (bill: Bill) => {
-    setSelectedBill(bill);
-    setNotesOpen(true);
-    try {
-      const notes = await billNotesService.getByBillId(bill.id);
-      setBillNotes(notes);
-    } catch (error) {
-      console.error('Error loading notes:', error);
-      setErrorMessage('Failed to load notes');
-    }
-  };
+  const filteredBills = bills.filter(bill => {
+    const matchesSearch = bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         bill.sponsor.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -276,16 +103,6 @@ export default function BillsPage() {
       case 'Active': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'Passed': return 'bg-green-100 text-green-800 border-green-200';
       case 'Failed': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getPositionColor = (position: string) => {
-    switch (position) {
-      case 'Support': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Monitor': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Oppose': return 'bg-red-100 text-red-800 border-red-200';
-      case 'Hypothetical': return 'bg-purple-100 text-purple-800 border-purple-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -456,73 +273,15 @@ export default function BillsPage() {
             </Alert>
           )}
 
-          {/* Filters */}
+          {/* Search */}
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex-1 min-w-64">
-                  <Input
-                    placeholder="Search bills..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Passed">Passed</SelectItem>
-                    <SelectItem value="Failed">Failed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Priority</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="None">None</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={watchlistFilter === null ? 'All' : watchlistFilter ? 'Watchlist' : 'Not Watchlist'} onValueChange={(value) => {
-                  if (value === 'All') setWatchlistFilter(null);
-                  else if (value === 'Watchlist') setWatchlistFilter(true);
-                  else setWatchlistFilter(false);
-                }}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Bills</SelectItem>
-                    <SelectItem value="Watchlist">Watchlist</SelectItem>
-                    <SelectItem value="Not Watchlist">Not Watchlist</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                >
-                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-                </Button>
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated_at">Updated</SelectItem>
-                    <SelectItem value="bill_number">Bill Number</SelectItem>
-                    <SelectItem value="priority">Priority</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                placeholder="Search bills..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
             </CardContent>
           </Card>
 
@@ -548,7 +307,6 @@ export default function BillsPage() {
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Position</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Priority</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Client</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -573,7 +331,7 @@ export default function BillsPage() {
                           </Badge>
                         </td>
                         <td className="py-4 px-4">
-                          <Badge className={getPositionColor(bill.position)}>
+                          <Badge className="bg-gray-100 text-gray-800 border-gray-200">
                             {bill.position}
                           </Badge>
                         </td>
@@ -587,43 +345,6 @@ export default function BillsPage() {
                             {bill.client_id ? clients.find(c => c.id === bill.client_id)?.name || 'Unknown' : 'No client'}
                           </span>
                         </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openNotesModal(bill)}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              Notes
-                            </Button>
-                            <Select value={bill.priority} onValueChange={(value: any) => handleUpdatePriority(bill.id, value)}>
-                              <SelectTrigger className="w-24 h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="None">None</SelectItem>
-                                <SelectItem value="Low">Low</SelectItem>
-                                <SelectItem value="Medium">Medium</SelectItem>
-                                <SelectItem value="High">High</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleWatchlist(bill.id)}
-                              disabled={actionLoading === bill.id}
-                            >
-                              {actionLoading === bill.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : bill.watchlist ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -631,82 +352,6 @@ export default function BillsPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Notes Modal */}
-          <Dialog open={notesOpen} onOpenChange={setNotesOpen}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Notes for {selectedBill?.bill_number}</span>
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                {/* Add Note Form */}
-                <div className="border rounded-lg p-4 bg-slate-50">
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="note_type">Note Type</Label>
-                      <Select value={noteType} onValueChange={(value: any) => setNoteType(value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="General">General</SelectItem>
-                          <SelectItem value="Strategy">Strategy</SelectItem>
-                          <SelectItem value="Meeting">Meeting</SelectItem>
-                          <SelectItem value="Update">Update</SelectItem>
-                          <SelectItem value="Analysis">Analysis</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="new_note">Add Note</Label>
-                      <Textarea
-                        id="new_note"
-                        value={newNote}
-                        onChange={(e) => setNewNote(e.target.value)}
-                        placeholder="Add a note about this bill..."
-                        rows={3}
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleAddNote}
-                      disabled={!newNote.trim() || actionLoading === 'add-note'}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {actionLoading === 'add-note' ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      Add Note
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Existing Notes */}
-                <div className="space-y-3">
-                  <h3 className="font-medium text-slate-900">Existing Notes</h3>
-                  {billNotes.length === 0 ? (
-                    <p className="text-slate-500 text-sm">No notes yet. Add one above!</p>
-                  ) : (
-                    billNotes.map((note) => (
-                      <div key={note.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="outline">{note.note_type}</Badge>
-                          <span className="text-xs text-slate-500">
-                            {new Date(note.created_at).toLocaleDateString()} by {note.author}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-700">{note.content}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
     </ProtectedRoute>
