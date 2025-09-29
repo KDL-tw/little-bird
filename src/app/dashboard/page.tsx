@@ -26,7 +26,9 @@ import {
   Bell,
   Globe,
   Network,
-  ArrowRight
+  ArrowRight,
+  Database,
+  RefreshCw
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -71,6 +73,12 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/admin">
+                      <Database className="mr-2 h-4 w-4" />
+                      Data Sync
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/billing">
                       <Settings className="mr-2 h-4 w-4" />
@@ -168,6 +176,12 @@ export default function Dashboard() {
                 <Button className="w-full justify-start" variant="outline">
                   <Users className="h-4 w-4 mr-2" />
                   View Legislators
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin">
+                <Button className="w-full justify-start" variant="outline">
+                  <Database className="h-4 w-4 mr-2" />
+                  Data Sync
                 </Button>
               </Link>
               <Link href="/test-simple">

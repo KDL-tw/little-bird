@@ -27,6 +27,7 @@ interface SyncResult {
 export default function AdminDashboard() {
   const [billsSync, setBillsSync] = useState<SyncResult | null>(null);
   const [legislatorsSync, setLegislatorsSync] = useState<SyncResult | null>(null);
+  const [testSync, setTestSync] = useState<SyncResult | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
   const syncBills = async () => {
@@ -60,6 +61,25 @@ export default function AdminDashboard() {
       setLegislatorsSync({
         success: false,
         message: 'Failed to sync legislators',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const syncTest = async () => {
+    setLoading('test');
+    setTestSync(null);
+    
+    try {
+      const response = await fetch('/api/test-sync', { method: 'POST' });
+      const result = await response.json();
+      setTestSync(result);
+    } catch (error) {
+      setTestSync({
+        success: false,
+        message: 'Failed to sync test data',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     } finally {
@@ -206,15 +226,73 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Test Sync */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Test Sync (Sample Data)
+            </CardTitle>
+            <CardDescription>
+              Load sample data to test the system without external API calls
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={syncTest} 
+              disabled={loading === 'test'}
+              className="w-full"
+              size="lg"
+            >
+              {loading === 'test' ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Loading Test Data...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Load Test Data
+                </>
+              )}
+            </Button>
+            
+            {testSync && (
+              <div className={`p-3 rounded-lg border ${
+                testSync.success 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className="flex items-center">
+                  {testSync.success ? (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                  )}
+                  <span className="font-medium">{testSync.message}</span>
+                </div>
+                {testSync.bills_count && testSync.legislators_count && (
+                  <p className="text-sm mt-1">
+                    Loaded {testSync.bills_count} bills and {testSync.legislators_count} legislators
+                  </p>
+                )}
+                {testSync.error && (
+                  <p className="text-sm mt-1">{testSync.error}</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Full Sync */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
               <RefreshCw className="h-5 w-5 mr-2" />
-              Full Sync
+              Full Sync (External APIs)
             </CardTitle>
             <CardDescription>
-              Sync all data sources at once
+              Sync all data sources from external APIs at once
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -223,6 +301,7 @@ export default function AdminDashboard() {
               disabled={loading !== null}
               className="w-full"
               size="lg"
+              variant="outline"
             >
               {loading ? (
                 <>
