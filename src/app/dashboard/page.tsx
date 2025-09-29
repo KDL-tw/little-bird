@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   FileText, 
   Users, 
@@ -23,9 +23,34 @@ import {
   Search,
   BarChart3
 } from "lucide-react";
+import { billsService, legislatorsService } from "@/lib/database";
 
 export default function Dashboard() {
   const [platformOverviewOpen, setPlatformOverviewOpen] = useState(false);
+  const [billsCount, setBillsCount] = useState(0);
+  const [legislatorsCount, setLegislatorsCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [bills, legislators] = await Promise.all([
+        billsService.getAll(),
+        legislatorsService.getAll()
+      ]);
+      setBillsCount(bills.length);
+      setLegislatorsCount(legislators.length);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      // Keep default values on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const actions = (
     <div className="flex items-center space-x-2">
@@ -58,9 +83,11 @@ export default function Dashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">
+              {loading ? '...' : billsCount}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Sample bills loaded
+              {loading ? 'Loading...' : 'Bills tracked'}
             </p>
           </CardContent>
         </Card>
@@ -71,9 +98,11 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">
+              {loading ? '...' : legislatorsCount}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Sample legislators loaded
+              {loading ? 'Loading...' : 'Legislators tracked'}
             </p>
           </CardContent>
         </Card>
