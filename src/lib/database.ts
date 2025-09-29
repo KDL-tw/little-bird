@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Bill, Legislator, Note, Meeting, Aide, Associate, AffinityGroup, BillSponsor, IntelligenceSignal, MeetingNote } from './supabase'
+import type { Bill, Legislator, Note, Meeting, Aide, Associate, AffinityGroup, BillSponsor, IntelligenceSignal, MeetingNote, Client, Contact, BillNote, UserAction } from './supabase'
 
 // Check if Supabase is properly configured
 const isSupabaseConfigured = () => {
@@ -112,6 +112,45 @@ export const billsService = {
     
     if (error) throw error
     return data
+  },
+
+  async updatePriority(id: string, priority: 'High' | 'Medium' | 'Low' | 'None'): Promise<Bill> {
+    const { data, error } = await supabase
+      .from('bills')
+      .update({ priority })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async toggleWatchlist(id: string): Promise<Bill> {
+    const { data, error } = await supabase
+      .from('bills')
+      .update({ watchlist: true })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async getWatchlist(): Promise<Bill[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('watchlist', true)
+      .order('updated_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
   },
 
   async delete(id: string): Promise<void> {
@@ -702,5 +741,199 @@ export const meetingNotesService = {
       .eq('id', id)
 
     if (error) throw error
+  }
+}
+
+// Clients Service
+export const clientsService = {
+  async getAll(): Promise<Client[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getById(id: string): Promise<Client | null> {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async create(client: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> {
+    const { data, error } = await supabase
+      .from('clients')
+      .insert(client)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updates: Partial<Client>): Promise<Client> {
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+}
+
+// Contacts Service
+export const contactsService = {
+  async getByClientId(clientId: string): Promise<Contact[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('name', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async create(contact: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<Contact> {
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert(contact)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updates: Partial<Contact>): Promise<Contact> {
+    const { data, error } = await supabase
+      .from('contacts')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+}
+
+// Bill Notes Service
+export const billNotesService = {
+  async getByBillId(billId: string): Promise<BillNote[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('bill_notes')
+      .select('*')
+      .eq('bill_id', billId)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async create(note: Omit<BillNote, 'id' | 'created_at' | 'updated_at'>): Promise<BillNote> {
+    const { data, error } = await supabase
+      .from('bill_notes')
+      .insert(note)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updates: Partial<BillNote>): Promise<BillNote> {
+    const { data, error } = await supabase
+      .from('bill_notes')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('bill_notes')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+}
+
+// User Actions Service (for tracking)
+export const userActionsService = {
+  async logAction(action: Omit<UserAction, 'id' | 'created_at'>): Promise<UserAction> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+    
+    const { data, error } = await supabase
+      .from('user_actions')
+      .insert(action)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async getByUserId(userId: string): Promise<UserAction[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('user_actions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    
+    if (error) throw error
+    return data || []
   }
 }

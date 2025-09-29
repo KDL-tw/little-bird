@@ -14,6 +14,9 @@ export interface Bill {
   status: 'Active' | 'Passed' | 'Failed'
   last_action: string
   position: 'Support' | 'Monitor' | 'Oppose' | 'None' | 'Hypothetical'
+  priority: 'High' | 'Medium' | 'Low' | 'None'
+  watchlist: boolean
+  client_id?: string
   ai_analysis?: {
     executive_summary: string
     key_provisions: string[]
@@ -146,4 +149,53 @@ export interface MeetingNote {
   author: string
   created_at: string
   updated_at: string
+}
+
+export interface Client {
+  id: string
+  name: string
+  organization?: string
+  contact_person?: string
+  email?: string
+  phone?: string
+  address?: string
+  industry?: string
+  relationship_type: 'Client' | 'Prospect' | 'Partner' | 'Vendor'
+  status: 'Active' | 'Inactive' | 'Prospect'
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Contact {
+  id: string
+  client_id: string
+  name: string
+  title?: string
+  email?: string
+  phone?: string
+  role?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface BillNote {
+  id: string
+  bill_id: string
+  content: string
+  author: string
+  note_type: 'General' | 'Strategy' | 'Meeting' | 'Update' | 'Analysis'
+  created_at: string
+  updated_at: string
+}
+
+export interface UserAction {
+  id: string
+  user_id: string
+  action_type: string
+  entity_type: string
+  entity_id: string
+  details?: any
+  created_at: string
 }
