@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Search, ArrowLeft, Loader2, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { billsService, clientsService } from '@/lib/database';
+import type { Client } from '@/lib/supabase';
 
 interface OpenStatesBill {
   id: string;
@@ -28,6 +33,30 @@ export default function SimpleBillsSearch() {
   const [searchResults, setSearchResults] = useState<OpenStatesBill[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedBill, setSelectedBill] = useState<OpenStatesBill | null>(null);
+  const [addBillOpen, setAddBillOpen] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [newBill, setNewBill] = useState({
+    position: 'None' as 'Support' | 'Monitor' | 'Oppose' | 'None' | 'Hypothetical',
+    priority: 'None' as 'High' | 'Medium' | 'Low' | 'None',
+    client_id: '',
+    watchlist: false
+  });
+
+  // Load clients on component mount
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      const data = await clientsService.getAll();
+      setClients(data);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
 
   const searchBills = async () => {
     try {
@@ -70,6 +99,47 @@ export default function SimpleBillsSearch() {
     }
   };
 
+  const handleAddBill = async () => {
+    if (!selectedBill) return;
+    
+    try {
+      setLoading(true);
+      
+      // Convert OpenStates bill to our format
+      const billData = {
+        bill_number: selectedBill.identifier,
+        title: selectedBill.title,
+        sponsor: selectedBill.from_organization?.name || 'Unknown',
+        status: 'Active' as 'Active' | 'Passed' | 'Failed',
+        last_action: selectedBill.latest_action_description || 'Introduced',
+        position: newBill.position,
+        priority: newBill.priority,
+        client_id: newBill.client_id || undefined,
+        watchlist: newBill.watchlist,
+        openstates_id: selectedBill.id,
+        openstates_data: selectedBill
+      };
+      
+      await billsService.create(billData);
+      setAddBillOpen(false);
+      setSuccessMessage(`Bill ${selectedBill.identifier} added to tracking!`);
+      
+      // Reset form
+      setNewBill({
+        position: 'None',
+        priority: 'None',
+        client_id: '',
+        watchlist: false
+      });
+      
+    } catch (error) {
+      console.error('Error adding bill:', error);
+      setErrorMessage('Failed to add bill to tracking');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -100,6 +170,13 @@ export default function SimpleBillsSearch() {
           <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {successMessage && (
+          <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
 
@@ -168,7 +245,15 @@ export default function SimpleBillsSearch() {
                           <span>State: {bill.jurisdiction.name}</span>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedBill(bill);
+                          setAddBillOpen(true);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
                         Add to Tracking
                       </Button>
                     </div>
@@ -195,6 +280,104 @@ export default function SimpleBillsSearch() {
             </pre>
           </CardContent>
         </Card>
+
+        {/* Add Bill Modal */}
+        <Dialog open={addBillOpen} onOpenChange={setAddBillOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Bill to Tracking</DialogTitle>
+            </DialogHeader>
+            {selectedBill && (
+              <div className="space-y-4">
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <h3 className="font-semibold">{selectedBill.identifier}</h3>
+                  <p className="text-sm text-slate-600">{selectedBill.title}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Sponsor: {selectedBill.from_organization?.name || 'Unknown'}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Last Action: {selectedBill.latest_action_description || 'Introduced'}
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="position">Position</Label>
+                    <Select value={newBill.position} onValueChange={(value: any) => setNewBill({...newBill, position: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="None">None</SelectItem>
+                        <SelectItem value="Support">Support</SelectItem>
+                        <SelectItem value="Monitor">Monitor</SelectItem>
+                        <SelectItem value="Oppose">Oppose</SelectItem>
+                        <SelectItem value="Hypothetical">Hypothetical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="priority">Priority</Label>
+                    <Select value={newBill.priority} onValueChange={(value: any) => setNewBill({...newBill, priority: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="None">None</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="client_id">Client (Optional)</Label>
+                  <Select value={newBill.client_id} onValueChange={(value) => setNewBill({...newBill, client_id: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No client</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="watchlist"
+                    checked={newBill.watchlist}
+                    onChange={(e) => setNewBill({...newBill, watchlist: e.target.checked})}
+                    className="rounded"
+                  />
+                  <Label htmlFor="watchlist">Add to watchlist</Label>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setAddBillOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddBill} disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    Add Bill
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
