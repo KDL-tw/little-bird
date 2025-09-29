@@ -1,5 +1,7 @@
 # Little Bird - Political Intelligence Platform
 
+<!-- Latest deployment fix -->
+
 A professional Next.js application designed for boutique lobbying firms, featuring advanced analytics and compliance tools.
 
 ## Features
