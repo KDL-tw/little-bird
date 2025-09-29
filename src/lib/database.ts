@@ -126,14 +126,14 @@ export const billsDataService = {
     return data
   },
 
-  async toggleWatchlist(id: string): Promise<Bill> {
+  async toggleWatchlist(id: string, watchlist: boolean): Promise<Bill> {
     const { data, error } = await supabase
       .from('bills')
-      .update({ watchlist: true })
+      .update({ watchlist })
       .eq('id', id)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },

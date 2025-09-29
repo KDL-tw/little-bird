@@ -25,7 +25,8 @@ import {
   Calendar,
   Building2,
   TrendingUp,
-  Filter
+  Filter,
+  FileText
 } from 'lucide-react';
 import { billsDataService, clientsDataService } from '@/lib/database';
 import Link from 'next/link';
