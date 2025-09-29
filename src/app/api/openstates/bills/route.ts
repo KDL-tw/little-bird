@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const subject = searchParams.get('subject');
 
     // Build OpenStates API URL (using official v3 endpoint)
-    let url = `https://v3.openstates.org/bills?per_page=20&_t=${Date.now()}`;
+    let url = `https://v3.openstates.org/bills?per_page=20`;
     
     // Add jurisdiction (state) - required parameter (use state abbreviation)
     if (state) {
@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     if (query) {
       url += `&q=${encodeURIComponent(query)}`;
     }
+    // Note: We don't need to add q=* because jurisdiction alone is sufficient
     if (subject) {
       url += `&subject=${encodeURIComponent(subject)}`;
     }

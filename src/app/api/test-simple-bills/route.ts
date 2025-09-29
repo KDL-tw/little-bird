@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // Simple test with minimal parameters
+    // Simple test with minimal parameters (jurisdiction only, no query)
     const url = `https://v3.openstates.org/bills?jurisdiction=CO&per_page=5`;
     
     console.log('Testing simple bills API:', url);
