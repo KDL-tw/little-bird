@@ -49,14 +49,14 @@ else
     echo "❌ No remote origin configured"
     echo ""
     echo "Please create a GitHub repository first, then run:"
-    echo "   git remote add origin https://github.com/YOUR_USERNAME/little-bird.git"
+    echo "   git remote add origin https://github.com/KDL-tw/little-bird.git"
     echo "   git push -u origin main"
 fi
 
 echo ""
 echo "📋 Next Steps:"
 echo "1. Create GitHub repository at https://github.com/new"
-echo "2. Add remote origin: git remote add origin https://github.com/YOUR_USERNAME/little-bird.git"
+echo "2. Add remote origin: git remote add origin https://github.com/KDL-tw/little-bird.git"
 echo "3. Push code: git push -u origin main"
 echo "4. Go to https://vercel.com and import your GitHub repository"
 echo "5. Deploy! 🎉"

@@ -29,15 +29,20 @@ gh repo create little-bird --public --description "Political intelligence platfo
 
 ## Step 2: Connect Local Repository to GitHub
 
-**Replace `YOUR_USERNAME` with your actual GitHub username:**
+**Your GitHub username is `KDL-tw`:**
 
 ```bash
 # Add the remote repository
-git remote add origin https://github.com/YOUR_USERNAME/little-bird.git
+git remote add origin https://github.com/KDL-tw/little-bird.git
 
-# Push your code to GitHub
+# Push your code to GitHub (you'll need to authenticate)
 git push -u origin main
 ```
+
+**Authentication Required:**
+- **Username:** KDL-tw
+- **Password:** Use your Personal Access Token (not GitHub password)
+- **Get token at:** https://github.com/settings/tokens
 
 ## Step 3: Create Vercel Account
 
