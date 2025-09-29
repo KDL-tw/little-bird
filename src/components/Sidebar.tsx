@@ -42,13 +42,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     },
     {
       name: "Bills",
-      href: "/dashboard/bills",
+      href: "/dashboard/bills/search-simple",
       icon: FileText,
       current: pathname.startsWith("/dashboard/bills")
     },
     {
       name: "Legislators",
-      href: "/dashboard/legislators",
+      href: "/dashboard/legislators/search",
       icon: Users,
       current: pathname.startsWith("/dashboard/legislators")
     },
