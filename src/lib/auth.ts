@@ -105,6 +105,10 @@ export class AuthService {
 
   // Get current user
   async getCurrentUser(): Promise<User | null> {
+    if (!isSupabaseConfigured()) {
+      return null;
+    }
+    
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       
@@ -122,6 +126,10 @@ export class AuthService {
 
   // Get current session
   async getCurrentSession(): Promise<Session | null> {
+    if (!isSupabaseConfigured()) {
+      return null;
+    }
+    
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       
@@ -139,6 +147,17 @@ export class AuthService {
 
   // Listen to auth state changes
   onAuthStateChange(callback: (event: string, session: Session | null) => void) {
+    if (!isSupabaseConfigured()) {
+      // Return a mock subscription that does nothing
+      return {
+        data: {
+          subscription: {
+            unsubscribe: () => {}
+          }
+        }
+      };
+    }
+    
     return supabase.auth.onAuthStateChange(callback);
   }
 
