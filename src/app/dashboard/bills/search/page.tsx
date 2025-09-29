@@ -196,7 +196,7 @@ export default function BillSearchPage() {
               </Link>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">Search Colorado Bills</h1>
-                <p className="text-slate-600 mt-1">Find bills from OpenStates to add to your tracking</p>
+                <p className="text-slate-600 mt-1">Find bills from OpenStates to add to your tracking (Updated)</p>
               </div>
             </div>
           </div>
