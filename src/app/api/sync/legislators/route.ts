@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Starting legislators sync from OpenStates...');
     
-    // Get legislators from OpenStates API
-    const openStatesUrl = `https://v3.openstates.org/people?jurisdiction=CO&per_page=100`;
+    // Get legislators from OpenStates API (max 20 per request)
+    const openStatesUrl = `https://v3.openstates.org/people?jurisdiction=CO&per_page=20`;
     const response = await fetch(openStatesUrl, {
       headers: {
         'Accept': 'application/json',
@@ -16,7 +16,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenStates API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenStates API error response:', errorText);
+      throw new Error(`OpenStates API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
