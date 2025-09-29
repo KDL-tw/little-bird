@@ -91,14 +91,14 @@ export default function BillSearchPage() {
       setLoading(true);
       setErrorMessage(null);
       
-      const response = await fetch(`/api/openstates/bills?search=${encodeURIComponent(searchTerm)}&state=co`);
+      const response = await fetch(`/api/openstates/bills?q=${encodeURIComponent(searchTerm)}&state=co`);
       const data = await response.json();
       
-      if (data.results) {
-        setSearchResults(data.results);
+      if (data.success && data.data) {
+        setSearchResults(data.data);
       } else {
         setSearchResults([]);
-        setErrorMessage('No bills found matching your search');
+        setErrorMessage(data.error || 'No bills found matching your search');
       }
     } catch (error) {
       console.error('Error searching bills:', error);
