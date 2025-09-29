@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+// import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { 
   BarChart3, 
   FileText, 
@@ -64,8 +64,7 @@ export default function Dashboard() {
   const isAdminBypass = typeof window !== 'undefined' && sessionStorage.getItem('adminBypass');
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white z-50">
         <div className="flex flex-col h-full">
@@ -629,6 +628,5 @@ export default function Dashboard() {
         </main>
       </div>
       </div>
-    </ProtectedRoute>
   );
 }
