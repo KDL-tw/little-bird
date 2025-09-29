@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     // Simple test with minimal parameters (jurisdiction only, no query)
-    const url = `https://v3.openstates.org/bills?jurisdiction=CO&per_page=5`;
+    const url = `https://v3.openstates.org/bills?jurisdiction=CO&per_page=20`;
     
     console.log('Testing simple bills API:', url);
     
@@ -29,12 +29,21 @@ export async function GET(request: NextRequest) {
     
     const data = await response.json();
     
+    // Handle OpenStates v3 API response format (same as main API)
+    let bills = [];
+    if (data.results && Array.isArray(data.results)) {
+      bills = data.results;
+    } else if (Array.isArray(data)) {
+      bills = data;
+    }
+    
     return NextResponse.json({
       success: true,
       status: response.status,
-      data: data,
+      data: bills,
+      count: bills.length,
       url: url,
-      billsCount: data.results?.length || 0
+      pagination: data.pagination || null
     });
     
   } catch (error) {
