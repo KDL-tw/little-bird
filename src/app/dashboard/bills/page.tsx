@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, Plus, Star, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { billsService, clientsService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -119,7 +119,6 @@ export default function BillsPage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Bills</h1>
@@ -259,7 +258,6 @@ export default function BillsPage() {
             </div>
           </div>
 
-          {/* Alerts */}
           {successMessage && (
             <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
               <CheckCircle className="h-4 w-4" />
@@ -273,7 +271,6 @@ export default function BillsPage() {
             </Alert>
           )}
 
-          {/* Search */}
           <Card className="mb-6">
             <CardContent className="p-6">
               <Input
@@ -285,7 +282,6 @@ export default function BillsPage() {
             </CardContent>
           </Card>
 
-          {/* Bills Table */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
