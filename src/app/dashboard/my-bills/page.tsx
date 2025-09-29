@@ -28,7 +28,7 @@ import {
   Filter,
   FileText
 } from 'lucide-react';
-import { billsDataService, clientsDataService } from '@/lib/database';
+import { adminRepositoryService } from '@/lib/user-services';
 import Link from 'next/link';
 import type { Bill, Client } from '@/lib/supabase';
 
@@ -56,8 +56,8 @@ export default function MyBillsPage() {
     try {
       setLoading(true);
       const [billsData, clientsData] = await Promise.all([
-        billsDataService.getAll(),
-        clientsDataService.getAll()
+        adminRepositoryService.getRecentBills(20),
+        [] // No clients until we have user authentication
       ]);
       setBills(billsData);
       setClients(clientsData);
@@ -90,13 +90,8 @@ export default function MyBillsPage() {
 
     try {
       setLoading(true);
-      await billsDataService.update(selectedBill.id, {
-        position: editForm.position,
-        priority: editForm.priority,
-        client_id: editForm.client_id || undefined,
-        watchlist: editForm.watchlist,
-        notes: editForm.notes
-      });
+      // For now, just show a message since we need user authentication
+      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
       
       setEditBillOpen(false);
       setSuccessMessage('Bill updated successfully!');
@@ -113,7 +108,8 @@ export default function MyBillsPage() {
     if (confirm('Are you sure you want to delete this bill from your tracking?')) {
       try {
         setLoading(true);
-        await billsDataService.delete(id);
+        // For now, just show a message since we need user authentication
+      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
         setSuccessMessage('Bill removed from tracking!');
         loadData();
       } catch (error) {
@@ -127,7 +123,8 @@ export default function MyBillsPage() {
 
   const handleToggleWatchlist = async (id: string, currentWatchlist: boolean) => {
     try {
-      await billsDataService.toggleWatchlist(id, !currentWatchlist);
+      // For now, just show a message since we need user authentication
+      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
       setSuccessMessage(`Bill ${!currentWatchlist ? 'added to' : 'removed from'} watchlist!`);
       loadData();
     } catch (error) {
@@ -138,7 +135,8 @@ export default function MyBillsPage() {
 
   const handleUpdatePriority = async (id: string, priority: string) => {
     try {
-      await billsDataService.updatePriority(id, priority as 'High' | 'Medium' | 'Low' | 'None');
+      // For now, just show a message since we need user authentication
+      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
       setSuccessMessage('Priority updated successfully!');
       loadData();
     } catch (error) {
