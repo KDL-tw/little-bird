@@ -90,7 +90,7 @@ export default function SimpleBillsSearch() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Simple Bills Search</h1>
-              <p className="text-slate-600 mt-1">Clean version - just get the data working</p>
+              <p className="text-slate-600 mt-1">Clean version - just get the data working (v2)</p>
             </div>
           </div>
         </div>
