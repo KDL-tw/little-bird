@@ -318,7 +318,7 @@ export default function BillsPage() {
                     Add Bill
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Add New Bill</DialogTitle>
                 </DialogHeader>
@@ -434,8 +434,8 @@ export default function BillsPage() {
                   </Button>
                 </div>
               </DialogContent>
-            </Dialog>
-          </div>
+              </Dialog>
+            </div>
 
           {/* Alerts */}
           {successMessage && (
