@@ -35,7 +35,7 @@ import {
   CheckCircle,
   ArrowRight
 } from "lucide-react";
-import { legislatorsDataService, notesDataService, meetingsDataService, aidesDataService, associatesDataService, affinityGroupsDataService } from "@/lib/database";
+import { adminRepositoryService } from "@/lib/user-services";
 import type { Legislator, Note, Meeting, Aide, Associate, AffinityGroup } from "@/lib/supabase";
 
 interface LegislatorWithRelations extends Legislator {
@@ -67,10 +67,10 @@ export default function LegislatorsCRM() {
   const loadLegislators = async () => {
     try {
       setLoading(true);
-      const data = await legislatorsDataService.getAll();
+      const data = await adminRepositoryService.getRecentLegislators(20);
       setLegislators(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load legislators');
+      setError(err instanceof Error ? err.message : 'Failed to load legislators. Please ensure the database is set up.');
     } finally {
       setLoading(false);
     }

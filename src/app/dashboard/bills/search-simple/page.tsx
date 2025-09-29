@@ -11,8 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Search, ArrowLeft, Loader2, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { billsDataService, clientsDataService } from '@/lib/database';
-import type { Client } from '@/lib/supabase';
+import { adminRepositoryService } from '@/lib/user-services';
 
 interface OpenStatesBill {
   id: string;

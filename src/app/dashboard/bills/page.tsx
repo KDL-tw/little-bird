@@ -11,16 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2, Users, ArrowRight } from 'lucide-react';
-import { billsDataService, clientsDataService } from '@/lib/database';
-import { useAuth } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { userBillsService, clientsService } from '@/lib/user-services';
+import { adminRepositoryService } from '@/lib/user-services';
 import Link from 'next/link';
-import type { Bill, Client } from '@/lib/supabase';
 
 export default function BillsPage() {
-  const { user } = useAuth();
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [bills, setBills] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [addBillOpen, setAddBillOpen] = useState(false);
@@ -39,38 +36,33 @@ export default function BillsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadBills();
-    loadClients();
+    loadData();
   }, []);
 
-  const loadBills = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await billsDataService.getAll();
-      setBills(data);
+      // For now, show available bills from admin repository
+      const [billsData, clientsData] = await Promise.all([
+        adminRepositoryService.getRecentBills(20),
+        clientsService.getByUser('demo-user') // This will return empty until we have real users
+      ]);
+      setBills(billsData);
+      setClients(clientsData);
     } catch (error) {
-      console.error('Error loading bills:', error);
-      setErrorMessage('Failed to load bills');
+      console.error('Error loading data:', error);
+      setErrorMessage('Failed to load data. Please ensure the database is set up.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadClients = async () => {
-    try {
-      const data = await clientsDataService.getAll();
-      setClients(data);
-    } catch (error) {
-      console.error('Error loading clients:', error);
     }
   };
 
   const handleAddBill = async () => {
     try {
       setLoading(true);
-      await billsDataService.create(newBill);
+      // For now, just show a message since we need real user authentication
       setAddBillOpen(false);
-      setSuccessMessage('Bill added successfully!');
+      setSuccessMessage('Bill tracking requires user authentication. Please sign in to track bills.');
       setNewBill({
         bill_number: '',
         title: '',
@@ -82,7 +74,6 @@ export default function BillsPage() {
         client_id: '',
         watchlist: false
       });
-      loadBills();
     } catch (error) {
       console.error('Error adding bill:', error);
       setErrorMessage('Failed to add bill');
@@ -94,9 +85,7 @@ export default function BillsPage() {
   const handleDeleteBill = async (id: string) => {
     if (confirm('Are you sure you want to delete this bill?')) {
       try {
-        await billsDataService.delete(id);
-        setSuccessMessage('Bill deleted successfully!');
-        loadBills();
+        setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
       } catch (error) {
         console.error('Error deleting bill:', error);
         setErrorMessage('Failed to delete bill');
@@ -106,9 +95,7 @@ export default function BillsPage() {
 
   const handleToggleWatchlist = async (id: string, currentWatchlist: boolean) => {
     try {
-      await billsDataService.toggleWatchlist(id, !currentWatchlist);
-      setSuccessMessage(`Bill ${!currentWatchlist ? 'added to' : 'removed from'} watchlist!`);
-      loadBills();
+      setSuccessMessage('Bill tracking requires user authentication. Please sign in to track bills.');
     } catch (error) {
       console.error('Error toggling watchlist:', error);
       setErrorMessage('Failed to update watchlist');
@@ -117,9 +104,7 @@ export default function BillsPage() {
 
   const handleUpdatePriority = async (id: string, priority: string) => {
     try {
-      await billsDataService.updatePriority(id, priority as 'High' | 'Medium' | 'Low' | 'None');
-      setSuccessMessage('Priority updated successfully!');
-      loadBills();
+      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
     } catch (error) {
       console.error('Error updating priority:', error);
       setErrorMessage('Failed to update priority');
