@@ -13,13 +13,19 @@ export async function GET(request: NextRequest) {
     }
 
             // Build OpenStates API URL for specific bill (using v3 endpoint)
-            const url = `https://v3.openstates.org/bills/${billId}?apikey=${process.env.NEXT_PUBLIC_OPENSTATES_API_KEY || '7fffc14f-6f2d-4168-ac04-628867cec6b1'}`;
+            const url = `https://v3.openstates.org/bills/${billId}`;
 
             // Make request to OpenStates API
             const headers: HeadersInit = {
                 'Accept': 'application/json',
                 'User-Agent': 'LittleBird/1.0'
             };
+
+            // Add API key in header (as per video tutorial)
+            const apiKey = process.env.NEXT_PUBLIC_OPENSTATES_API_KEY || '7fffc14f-6f2d-4168-ac04-628867cec6b1';
+            if (apiKey) {
+                headers['X-API-Key'] = apiKey;
+            }
 
     const response = await fetch(url, { headers });
 

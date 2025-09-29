@@ -4,15 +4,16 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = '7fffc14f-6f2d-4168-ac04-628867cec6b1';
     
-    // Test the API with v3 endpoint (using full jurisdiction ID)
-    const testUrl = `https://v3.openstates.org/bills?jurisdiction=ocd-jurisdiction/country:us/state:co/government&per_page=3&apikey=${apiKey}`;
+    // Test the API with v3 endpoint (using state abbreviation and header auth)
+    const testUrl = `https://v3.openstates.org/bills?jurisdiction=CO&per_page=3`;
     
     console.log('Testing OpenStates API:', testUrl);
     
     const response = await fetch(testUrl, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'LittleBird/1.0'
+        'User-Agent': 'LittleBird/1.0',
+        'X-API-Key': apiKey
       }
     });
     

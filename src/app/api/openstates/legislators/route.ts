@@ -9,18 +9,9 @@ export async function GET(request: NextRequest) {
     // Build OpenStates API URL (using official v3 endpoint)
     let url = `https://v3.openstates.org/people?per_page=100`;
     
-    // Add jurisdiction (state) - required parameter (use full jurisdiction ID)
+    // Add jurisdiction (state) - required parameter (use state abbreviation)
     if (state) {
-      // Map state codes to full jurisdiction IDs
-      const jurisdictionMap: { [key: string]: string } = {
-        'co': 'ocd-jurisdiction/country:us/state:co/government',
-        'ca': 'ocd-jurisdiction/country:us/state:ca/government',
-        'ny': 'ocd-jurisdiction/country:us/state:ny/government',
-        'tx': 'ocd-jurisdiction/country:us/state:tx/government',
-        'fl': 'ocd-jurisdiction/country:us/state:fl/government'
-      };
-      const jurisdictionId = jurisdictionMap[state.toLowerCase()] || `ocd-jurisdiction/country:us/state:${state.toLowerCase()}/government`;
-      url += `&jurisdiction=${jurisdictionId}`;
+      url += `&jurisdiction=${state.toUpperCase()}`;
     }
     
     if (query) {
@@ -33,10 +24,10 @@ export async function GET(request: NextRequest) {
       'User-Agent': 'LittleBird/1.0'
     };
 
-    // Add API key if available (using apikey query parameter as per docs)
+    // Add API key in header (as per video tutorial)
     const apiKey = process.env.NEXT_PUBLIC_OPENSTATES_API_KEY || '7fffc14f-6f2d-4168-ac04-628867cec6b1';
     if (apiKey) {
-      url += `&apikey=${apiKey}`;
+      headers['X-API-Key'] = apiKey;
     }
 
     const response = await fetch(url, { headers });
