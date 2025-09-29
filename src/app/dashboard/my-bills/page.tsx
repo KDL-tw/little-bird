@@ -52,10 +52,6 @@ export default function MyBillsPage() {
     notes: ''
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -72,6 +68,10 @@ export default function MyBillsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleEditBill = (bill: Bill) => {
     setSelectedBill(bill);
