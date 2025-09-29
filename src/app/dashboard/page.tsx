@@ -43,12 +43,21 @@ export default function Dashboard() {
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [isAdminBypass, setIsAdminBypass] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Use static values for now to avoid auth issues
   const user = null; // Will be populated when auth is working
   const signOut = async () => {
     console.log('Sign out requested');
   };
+
+  // Check for admin bypass mode after component mounts
+  useEffect(() => {
+    setMounted(true);
+    const bypass = sessionStorage.getItem('adminBypass') === 'true';
+    setIsAdminBypass(bypass);
+  }, []);
 
   const handleEarlyAccessRequest = () => {
     // In a real app, this would send the email to a backend
@@ -65,8 +74,17 @@ export default function Dashboard() {
     return email.split('@')[0].substring(0, 2).toUpperCase();
   };
 
-  // Check for admin bypass mode
-  const isAdminBypass = typeof window !== 'undefined' && sessionStorage.getItem('adminBypass');
+  // Show loading state until component is mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
