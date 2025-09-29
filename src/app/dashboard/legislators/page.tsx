@@ -584,12 +584,12 @@ export default function LegislatorsCRM() {
 
           {/* Back to Home */}
           <div className="p-4 border-t border-slate-800">
-            <a href="/">
+            <Link href="/">
               <Button variant="outline" className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
                 <FileText className="w-4 h-4 mr-2" />
                 Back to Home
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </div>
