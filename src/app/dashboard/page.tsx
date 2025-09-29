@@ -59,6 +59,9 @@ export default function Dashboard() {
     return email.split('@')[0].substring(0, 2).toUpperCase();
   };
 
+  // Check for admin bypass mode
+  const isAdminBypass = typeof window !== 'undefined' && sessionStorage.getItem('adminBypass');
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-50">
@@ -131,8 +134,15 @@ export default function Dashboard() {
         <header className="bg-white border-b border-slate-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-              <p className="text-slate-600">Here&apos;s what&apos;s happening with your lobbying operations today.</p>
+              <h1 className="text-2xl font-semibold text-slate-900">
+                {isAdminBypass ? 'Admin Dashboard' : 'Welcome back'}
+              </h1>
+              <p className="text-slate-600">
+                {isAdminBypass 
+                  ? 'Admin bypass mode - Supabase not configured' 
+                  : 'Here\'s what\'s happening with your lobbying operations today.'
+                }
+              </p>
             </div>
             <div className="flex items-center space-x-4">
               {/* User Menu */}
@@ -142,7 +152,7 @@ export default function Dashboard() {
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.email} />
                       <AvatarFallback className="bg-indigo-600 text-white text-sm">
-                        {user?.email ? getUserInitials(user.email) : 'U'}
+                        {isAdminBypass ? 'AD' : (user?.email ? getUserInitials(user.email) : 'U')}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -150,9 +160,11 @@ export default function Dashboard() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.user_metadata?.name || user?.email}</p>
+                      <p className="font-medium">
+                        {isAdminBypass ? 'Admin User' : (user?.user_metadata?.name || user?.email)}
+                      </p>
                       <p className="w-[200px] truncate text-sm text-muted-foreground">
-                        {user?.email}
+                        {isAdminBypass ? 'admin@littlebird.com' : user?.email}
                       </p>
                     </div>
                   </div>

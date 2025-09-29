@@ -134,6 +134,8 @@ export default function LoginPage() {
     // TODO: Remove this before launch - Admin bypass for testing
     setSuccess('Admin bypass activated! Redirecting to dashboard...');
     setTimeout(() => {
+      // Store admin bypass flag in sessionStorage
+      sessionStorage.setItem('adminBypass', 'true');
       router.push('/dashboard');
     }, 1000);
   };
