@@ -545,7 +545,7 @@ export const affinityGroupsDataService = {
 }
 
 // Bill Sponsors Service
-export const billSponsorsService = {
+export const billSponsorsDataService = {
   async getAll(): Promise<BillSponsor[]> {
     const { data, error } = await supabase
       .from('bill_sponsors')
@@ -600,7 +600,7 @@ export const billSponsorsService = {
 }
 
 // Intelligence Signals Service
-export const intelligenceSignalsService = {
+export const intelligenceSignalsDataService = {
   async getAll(): Promise<IntelligenceSignal[]> {
     const { data, error } = await supabase
       .from('intelligence_signals')
@@ -678,7 +678,7 @@ export const intelligenceSignalsService = {
 }
 
 // Meeting Notes Service
-export const meetingNotesService = {
+export const meetingNotesDataService = {
   async getAll(): Promise<MeetingNote[]> {
     const { data, error } = await supabase
       .from('meeting_notes')

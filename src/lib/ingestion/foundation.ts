@@ -196,15 +196,15 @@ export class FoundationIngestion {
         const processedBill = this.transformBill(bill);
         
         // Store in database using our existing service
-        const { billsService } = await import('@/lib/database');
+        const { billsDataService } = await import('@/lib/database');
         
         // Check if bill already exists
-        const existingBills = await billsService.getAll();
+        const existingBills = await billsDataService.getAll();
         const existingBill = existingBills.find(b => b.bill_number === processedBill.bill_number);
         
         if (existingBill) {
           // Update existing bill
-          await billsService.update(existingBill.id, {
+          await billsDataService.update(existingBill.id, {
             title: processedBill.title,
             sponsor: processedBill.sponsor,
             status: processedBill.status,
@@ -215,7 +215,7 @@ export class FoundationIngestion {
           console.log(`📄 Updated bill: ${processedBill.bill_number}`);
         } else {
           // Create new bill
-          await billsService.create({
+          await billsDataService.create({
             bill_number: processedBill.bill_number,
             title: processedBill.title,
             sponsor: processedBill.sponsor,
@@ -245,15 +245,15 @@ export class FoundationIngestion {
         const processedLegislator = this.transformLegislator(legislator);
         
         // Store in database using our existing service
-        const { legislatorsService } = await import('@/lib/database');
+        const { legislatorsDataService } = await import('@/lib/database');
         
         // Check if legislator already exists
-        const existingLegislators = await legislatorsService.getAll();
+        const existingLegislators = await legislatorsDataService.getAll();
         const existingLegislator = existingLegislators.find(l => l.name === processedLegislator.name && l.district === processedLegislator.district);
         
         if (existingLegislator) {
           // Update existing legislator
-          await legislatorsService.update(existingLegislator.id, {
+          await legislatorsDataService.update(existingLegislator.id, {
             name: processedLegislator.name,
             district: processedLegislator.district,
             party: processedLegislator.party,
@@ -268,7 +268,7 @@ export class FoundationIngestion {
           console.log(`👤 Updated legislator: ${processedLegislator.name}`);
         } else {
           // Create new legislator
-          await legislatorsService.create({
+          await legislatorsDataService.create({
             name: processedLegislator.name,
             district: processedLegislator.district,
             party: processedLegislator.party,

@@ -87,7 +87,7 @@ export default function ClientsPage() {
 
   const loadContacts = async () => {
     try {
-      const data = await contactsService.getAll();
+      const data = await contactsDataService.getAll();
       setContacts(data);
     } catch (error) {
       console.error('Error loading contacts:', error);
@@ -122,7 +122,7 @@ export default function ClientsPage() {
   const handleAddContact = async () => {
     try {
       setLoading(true);
-      await contactsService.create(newContact);
+      await contactsDataService.create(newContact);
       setAddContactOpen(false);
       setSuccessMessage('Contact added successfully!');
       setNewContact({
