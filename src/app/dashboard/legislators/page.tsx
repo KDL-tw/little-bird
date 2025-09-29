@@ -35,7 +35,7 @@ import {
   CheckCircle,
   ArrowRight
 } from "lucide-react";
-import { legislatorsService, notesService, meetingsService, aidesService, associatesService, affinityGroupsService } from "@/lib/database";
+import { legislatorsDataService, notesDataService, meetingsDataService, aidesDataService, associatesDataService, affinityGroupsDataService } from "@/lib/database";
 import type { Legislator, Note, Meeting, Aide, Associate, AffinityGroup } from "@/lib/supabase";
 
 interface LegislatorWithRelations extends Legislator {
@@ -67,7 +67,7 @@ export default function LegislatorsCRM() {
   const loadLegislators = async () => {
     try {
       setLoading(true);
-      const data = await legislatorsService.getAll();
+      const data = await legislatorsDataService.getAll();
       setLegislators(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load legislators');
@@ -80,11 +80,11 @@ export default function LegislatorsCRM() {
     try {
       // Load related data
       const [notes, meetings, aides, associates, affinityGroups] = await Promise.all([
-        notesService.getByLegislatorId(legislator.id),
-        meetingsService.getByLegislatorId(legislator.id),
-        aidesService.getByLegislatorId(legislator.id),
-        associatesService.getByLegislatorId(legislator.id),
-        affinityGroupsService.getByLegislatorId(legislator.id)
+        notesDataService.getByLegislatorId(legislator.id),
+        meetingsDataService.getByLegislatorId(legislator.id),
+        aidesDataService.getByLegislatorId(legislator.id),
+        associatesDataService.getByLegislatorId(legislator.id),
+        affinityGroupsDataService.getByLegislatorId(legislator.id)
       ]);
 
       setSelectedLegislator({
@@ -105,7 +105,7 @@ export default function LegislatorsCRM() {
     if (!newNote.content.trim() || !newNote.legislator_id) return;
 
     try {
-      await notesService.create({
+      await notesDataService.create({
         legislator_id: newNote.legislator_id,
         content: newNote.content,
         type: 'general'

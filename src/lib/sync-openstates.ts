@@ -1,7 +1,7 @@
 // Service to sync OpenStates data with Supabase
 import { billsAPI, legislatorsAPI, dataConverters } from './openstates';
 import { mockBillsAPI, mockLegislatorsAPI } from './mock-openstates';
-import { billsService, legislatorsService } from './database';
+import { billsDataService, legislatorsDataService } from './database';
 
 export class OpenStatesSync {
   // Sync Colorado bills from OpenStates to Supabase
@@ -17,7 +17,7 @@ export class OpenStatesSync {
       const convertedBills = openStatesBills.map(bill => dataConverters.convertBill(bill));
       
       // Get existing bills from our database
-      const existingBills = await billsService.getAll();
+      const existingBills = await billsDataService.getAll();
       const existingBillNumbers = new Set(existingBills.map(bill => bill.bill_number));
       
       // Filter out bills we already have
@@ -28,7 +28,7 @@ export class OpenStatesSync {
       // Add new bills to database
       for (const bill of newBills) {
         try {
-          await billsService.create(bill);
+          await billsDataService.create(bill);
           console.log(`✅ Added bill: ${bill.bill_number}`);
         } catch (error) {
           console.error(`❌ Failed to add bill ${bill.bill_number}:`, error);
@@ -57,7 +57,7 @@ export class OpenStatesSync {
       const convertedLegislators = openStatesLegislators.map(legislator => dataConverters.convertLegislator(legislator));
       
       // Get existing legislators from our database
-      const existingLegislators = await legislatorsService.getAll();
+      const existingLegislators = await legislatorsDataService.getAll();
       const existingLegislatorIds = new Set(existingLegislators.map(leg => leg.id));
       
       // Filter out legislators we already have
@@ -68,7 +68,7 @@ export class OpenStatesSync {
       // Add new legislators to database
       for (const legislator of newLegislators) {
         try {
-          await legislatorsService.create(legislator);
+          await legislatorsDataService.create(legislator);
           console.log(`✅ Added legislator: ${legislator.name}`);
         } catch (error) {
           console.error(`❌ Failed to add legislator ${legislator.name}:`, error);

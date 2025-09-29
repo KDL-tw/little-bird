@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { legislatorsService } from '@/lib/database';
+import { legislatorsDataService } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     for (const sponsor of sponsors) {
       try {
         // Check if legislator already exists
-        const existingLegislators = await legislatorsService.getAll();
+        const existingLegislators = await legislatorsDataService.getAll();
         const exists = existingLegislators.some(leg => 
           leg.name === sponsor.name && leg.district === sponsor.district
         );
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Add new legislator
-        const newLegislator = await legislatorsService.create({
+        const newLegislator = await legislatorsDataService.create({
           name: sponsor.name,
           district: sponsor.district || 'Unknown',
           party: sponsor.party || 'Unknown',

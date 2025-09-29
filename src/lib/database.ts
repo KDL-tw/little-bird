@@ -339,7 +339,7 @@ export const legislatorsDataService = {
 }
 
 // Notes Service
-export const notesService = {
+export const notesDataService = {
   async create(note: Omit<Note, 'id' | 'created_at'>): Promise<Note> {
     const { data, error } = await supabase
       .from('notes')
@@ -373,7 +373,7 @@ export const notesService = {
 }
 
 // Meetings Service
-export const meetingsService = {
+export const meetingsDataService = {
   async create(meeting: Omit<Meeting, 'id' | 'created_at'>): Promise<Meeting> {
     const { data, error } = await supabase
       .from('meetings')
@@ -407,7 +407,7 @@ export const meetingsService = {
 }
 
 // Aides Service
-export const aidesService = {
+export const aidesDataService = {
   async create(aide: Omit<Aide, 'id' | 'created_at'>): Promise<Aide> {
     const { data, error } = await supabase
       .from('aides')
@@ -453,7 +453,7 @@ export const aidesService = {
 }
 
 // Associates Service
-export const associatesService = {
+export const associatesDataService = {
   async create(associate: Omit<Associate, 'id' | 'created_at'>): Promise<Associate> {
     const { data, error } = await supabase
       .from('associates')
@@ -499,7 +499,7 @@ export const associatesService = {
 }
 
 // Affinity Groups Service
-export const affinityGroupsService = {
+export const affinityGroupsDataService = {
   async create(group: Omit<AffinityGroup, 'id' | 'created_at'>): Promise<AffinityGroup> {
     const { data, error } = await supabase
       .from('affinity_groups')

@@ -30,7 +30,7 @@ import {
   Tag,
   Calendar
 } from 'lucide-react';
-import { contactsService } from '@/lib/database';
+import { contactsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import type { Contact } from '@/lib/supabase';
@@ -74,7 +74,7 @@ export default function ContactsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const contactsData = await contactsService.getAll();
+      const contactsData = await contactsDataService.getAll();
       setContacts(contactsData);
       
       // Load issue tags (mock for now)
@@ -96,7 +96,7 @@ export default function ContactsPage() {
   const handleAddContact = async () => {
     try {
       setLoading(true);
-      await contactsService.create(newContact);
+      await contactsDataService.create(newContact);
       setAddContactOpen(false);
       setSuccessMessage('Contact added successfully!');
       setNewContact({
@@ -123,7 +123,7 @@ export default function ContactsPage() {
   const handleDeleteContact = async (id: string) => {
     if (confirm('Are you sure you want to delete this contact?')) {
       try {
-        await contactsService.delete(id);
+        await contactsDataService.delete(id);
         setSuccessMessage('Contact deleted successfully!');
         loadData();
       } catch (error) {

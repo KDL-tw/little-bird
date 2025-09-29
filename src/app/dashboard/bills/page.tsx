@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2, Users, ArrowRight } from 'lucide-react';
-import { billsService, clientsService } from '@/lib/database';
+import { billsDataService, clientsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Link from 'next/link';
@@ -46,7 +46,7 @@ export default function BillsPage() {
   const loadBills = async () => {
     try {
       setLoading(true);
-      const data = await billsService.getAll();
+      const data = await billsDataService.getAll();
       setBills(data);
     } catch (error) {
       console.error('Error loading bills:', error);
@@ -58,7 +58,7 @@ export default function BillsPage() {
 
   const loadClients = async () => {
     try {
-      const data = await clientsService.getAll();
+      const data = await clientsDataService.getAll();
       setClients(data);
     } catch (error) {
       console.error('Error loading clients:', error);
@@ -68,7 +68,7 @@ export default function BillsPage() {
   const handleAddBill = async () => {
     try {
       setLoading(true);
-      await billsService.create(newBill);
+      await billsDataService.create(newBill);
       setAddBillOpen(false);
       setSuccessMessage('Bill added successfully!');
       setNewBill({
@@ -94,7 +94,7 @@ export default function BillsPage() {
   const handleDeleteBill = async (id: string) => {
     if (confirm('Are you sure you want to delete this bill?')) {
       try {
-        await billsService.delete(id);
+        await billsDataService.delete(id);
         setSuccessMessage('Bill deleted successfully!');
         loadBills();
       } catch (error) {
@@ -106,7 +106,7 @@ export default function BillsPage() {
 
   const handleToggleWatchlist = async (id: string, currentWatchlist: boolean) => {
     try {
-      await billsService.toggleWatchlist(id, !currentWatchlist);
+      await billsDataService.toggleWatchlist(id, !currentWatchlist);
       setSuccessMessage(`Bill ${!currentWatchlist ? 'added to' : 'removed from'} watchlist!`);
       loadBills();
     } catch (error) {
@@ -117,7 +117,7 @@ export default function BillsPage() {
 
   const handleUpdatePriority = async (id: string, priority: string) => {
     try {
-      await billsService.updatePriority(id, priority as 'High' | 'Medium' | 'Low' | 'None');
+      await billsDataService.updatePriority(id, priority as 'High' | 'Medium' | 'Low' | 'None');
       setSuccessMessage('Priority updated successfully!');
       loadBills();
     } catch (error) {
