@@ -33,6 +33,7 @@ import Link from 'next/link';
 import type { Bill, BillNote, Client } from '@/lib/supabase';
 
 export default function BillsPage() {
+  // Bills tracking page with CRM integration - fixed encoding
   const { user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -49,26 +50,26 @@ export default function BillsPage() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [billNotes, setBillNotes] = useState<BillNote[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [noteType, setNoteType] = useState<'General' | 'Strategy' | 'Meeting' | 'Update' | 'Analysis'>('General');
   
-  // Form states
+  // Action states
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Form states for adding bills
   const [newBill, setNewBill] = useState({
     bill_number: '',
     title: '',
     sponsor: '',
-    status: 'Active',
-    position: 'None',
-    priority: 'None',
+    status: 'Active' as 'Active' | 'Passed' | 'Failed',
+    last_action: '',
+    position: 'None' as 'Support' | 'Monitor' | 'Oppose' | 'None' | 'Hypothetical',
+    priority: 'None' as 'High' | 'Medium' | 'Low' | 'None',
     client_id: '',
-    last_action: ''
+    watchlist: false
   });
-  
-  const [newNote, setNewNote] = useState('');
-  const [noteType, setNoteType] = useState('General');
-  
-  // Action states
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     loadData();
@@ -76,6 +77,7 @@ export default function BillsPage() {
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const [billsData, clientsData] = await Promise.all([
         billsService.getAll(),
         clientsService.getAll()
@@ -84,7 +86,7 @@ export default function BillsPage() {
       setClients(clientsData);
     } catch (error) {
       console.error('Error loading data:', error);
-      setErrorMessage('Failed to load data');
+      setErrorMessage('Failed to load bills data');
     } finally {
       setLoading(false);
     }
@@ -92,9 +94,10 @@ export default function BillsPage() {
 
   const filteredBills = useMemo(() => {
     let filtered = bills.filter(bill => {
-      const matchesSearch = bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           bill.sponsor.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = 
+        bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bill.sponsor.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'All' || bill.status === statusFilter;
       const matchesPriority = priorityFilter === 'All' || bill.priority === priorityFilter;
@@ -103,23 +106,21 @@ export default function BillsPage() {
       return matchesSearch && matchesStatus && matchesPriority && matchesWatchlist;
     });
 
+    // Sort bills
     filtered.sort((a, b) => {
+      let aValue: any = a[sortBy];
+      let bValue: any = b[sortBy];
+      
       if (sortBy === 'priority') {
         const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1, 'None': 0 };
-        const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-        const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-        
-        if (sortOrder === 'asc') {
-          return aPriority - bPriority;
-        } else {
-          return bPriority - aPriority;
-        }
+        aValue = priorityOrder[a.priority];
+        bValue = priorityOrder[b.priority];
       }
       
       if (sortOrder === 'asc') {
-        return a[sortBy].localeCompare(b[sortBy]);
+        return aValue > bValue ? 1 : -1;
       } else {
-        return b[sortBy].localeCompare(a[sortBy]);
+        return aValue < bValue ? 1 : -1;
       }
     });
 
@@ -131,19 +132,21 @@ export default function BillsPage() {
       setActionLoading('add-bill');
       const bill = await billsService.create(newBill);
       setBills(prev => [bill, ...prev]);
+      setAddBillOpen(false);
       setNewBill({
         bill_number: '',
         title: '',
         sponsor: '',
         status: 'Active',
+        last_action: '',
         position: 'None',
         priority: 'None',
         client_id: '',
-        last_action: ''
+        watchlist: false
       });
-      setAddBillOpen(false);
       setSuccessMessage('Bill added successfully!');
-
+      
+      // Log user action
       if (user?.id) {
         await userActionsService.logAction({
           user_id: user.id,
@@ -164,16 +167,15 @@ export default function BillsPage() {
   const handleUpdatePriority = async (billId: string, priority: 'High' | 'Medium' | 'Low' | 'None') => {
     try {
       setActionLoading(billId);
-      await billsService.updatePriority(billId, priority);
-      setBills(prev => prev.map(bill => 
-        bill.id === billId ? { ...bill, priority } : bill
-      ));
+      const updatedBill = await billsService.updatePriority(billId, priority);
+      setBills(prev => prev.map(bill => bill.id === billId ? updatedBill : bill));
       setSuccessMessage(`Bill priority updated to ${priority}!`);
-
+      
+      // Log user action
       if (user?.id) {
         await userActionsService.logAction({
           user_id: user.id,
-          action_type: 'update',
+          action_type: 'update_priority',
           entity_type: 'bill',
           entity_id: billId,
           details: { priority }
@@ -190,26 +192,22 @@ export default function BillsPage() {
   const handleToggleWatchlist = async (billId: string) => {
     try {
       setActionLoading(billId);
-      const bill = bills.find(b => b.id === billId);
-      if (!bill) return;
+      const updatedBill = await billsService.toggleWatchlist(billId);
+      setBills(prev => prev.map(bill => bill.id === billId ? updatedBill : bill));
+      setSuccessMessage('Bill added to watchlist!');
       
-      await billsService.toggleWatchlist(billId, !bill.watchlist);
-      setBills(prev => prev.map(b => 
-        b.id === billId ? { ...b, watchlist: !b.watchlist } : b
-      ));
-      setSuccessMessage(`Bill ${!bill.watchlist ? 'added to' : 'removed from'} watchlist!`);
-
+      // Log user action
       if (user?.id) {
         await userActionsService.logAction({
           user_id: user.id,
-          action_type: 'update',
+          action_type: 'toggle_watchlist',
           entity_type: 'bill',
           entity_id: billId,
-          details: { watchlist: !bill.watchlist }
+          details: { watchlist: true }
         });
       }
     } catch (error) {
-      console.error('Error toggling watchlist:', error);
+      console.error('Error updating watchlist:', error);
       setErrorMessage('Failed to update watchlist');
     } finally {
       setActionLoading(null);
@@ -225,19 +223,19 @@ export default function BillsPage() {
         bill_id: selectedBill.id,
         content: newNote,
         author: user?.email || 'Unknown',
-        note_type: noteType as any
+        note_type: noteType
       });
       setBillNotes(prev => [note, ...prev]);
       setNewNote('');
-      setNoteType('General');
       setSuccessMessage('Note added successfully!');
-
+      
+      // Log user action
       if (user?.id) {
         await userActionsService.logAction({
           user_id: user.id,
-          action_type: 'create',
-          entity_type: 'bill_note',
-          entity_id: note.id,
+          action_type: 'add_note',
+          entity_type: 'bill',
+          entity_id: selectedBill.id,
           details: { note_type: noteType }
         });
       }
@@ -251,7 +249,6 @@ export default function BillsPage() {
 
   const openNotesModal = async (bill: Bill) => {
     setSelectedBill(bill);
-    setNotesOpen(true);
     try {
       const notes = await billNotesService.getByBillId(bill.id);
       setBillNotes(notes);
@@ -259,21 +256,22 @@ export default function BillsPage() {
       console.error('Error loading notes:', error);
       setErrorMessage('Failed to load notes');
     }
+    setNotesOpen(true);
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'High': return 'bg-red-100 text-red-800 border-red-200';
       case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Low': return 'bg-blue-100 text-blue-800 border-blue-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Active': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Passed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Passed': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'Failed': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -282,7 +280,7 @@ export default function BillsPage() {
   const getPositionColor = (position: string) => {
     switch (position) {
       case 'Support': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Monitor': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Monitor': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Oppose': return 'bg-red-100 text-red-800 border-red-200';
       case 'Hypothetical': return 'bg-purple-100 text-purple-800 border-purple-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -304,10 +302,10 @@ export default function BillsPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Bills</h1>
-              <p className="text-slate-600 mt-1">Track and manage legislative bills</p>
+              <h1 className="text-3xl font-bold text-slate-900">Bills Tracker</h1>
+              <p className="text-slate-600 mt-1">Track and manage Colorado legislation</p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex space-x-2">
               <Link href="/dashboard/bills/search">
                 <Button variant="outline">
                   <Search className="h-4 w-4 mr-2" />
@@ -439,7 +437,6 @@ export default function BillsPage() {
                 </DialogContent>
               </Dialog>
             </div>
-          </div>
 
           {/* Alerts */}
           {successMessage && (
@@ -457,19 +454,22 @@ export default function BillsPage() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex-1 min-w-64">
-                  <Input
-                    placeholder="Search bills..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div className="md:col-span-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search bills..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="All">All Status</SelectItem>
@@ -479,8 +479,8 @@ export default function BillsPage() {
                   </SelectContent>
                 </Select>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Priority" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="All">All Priority</SelectItem>
@@ -495,32 +495,34 @@ export default function BillsPage() {
                   else if (value === 'Watchlist') setWatchlistFilter(true);
                   else setWatchlistFilter(false);
                 }}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Watchlist" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="All">All Bills</SelectItem>
-                    <SelectItem value="Watchlist">Watchlist</SelectItem>
-                    <SelectItem value="Not Watchlist">Not Watchlist</SelectItem>
+                    <SelectItem value="Watchlist">Watchlist Only</SelectItem>
+                    <SelectItem value="Not Watchlist">Not on Watchlist</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                >
-                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-                </Button>
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated_at">Updated</SelectItem>
-                    <SelectItem value="bill_number">Bill Number</SelectItem>
-                    <SelectItem value="priority">Priority</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  >
+                    {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                  </Button>
+                  <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="updated_at">Updated</SelectItem>
+                      <SelectItem value="bill_number">Bill #</SelectItem>
+                      <SelectItem value="priority">Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -530,8 +532,8 @@ export default function BillsPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Bills ({filteredBills.length})</span>
-                <div className="flex items-center text-sm text-slate-500">
-                  <Star className="h-4 w-4 mr-1" />
+                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                  <Eye className="h-4 w-4" />
                   <span>{bills.filter(b => b.watchlist).length} on watchlist</span>
                 </div>
               </CardTitle>
@@ -542,6 +544,7 @@ export default function BillsPage() {
                   <thead>
                     <tr className="border-b border-slate-200">
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Bill</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-700">Title</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Sponsor</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Status</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Position</th>
@@ -553,48 +556,50 @@ export default function BillsPage() {
                   <tbody>
                     {filteredBills.map((bill) => (
                       <tr key={bill.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
                             <span className="font-mono text-sm font-medium">{bill.bill_number}</span>
                             {bill.watchlist && <Star className="h-4 w-4 text-yellow-500 fill-current" />}
                           </div>
-                          <div className="mt-1">
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="max-w-xs">
                             <p className="text-sm font-medium text-slate-900 truncate">{bill.title}</p>
                             <p className="text-xs text-slate-500">{bill.last_action}</p>
                           </div>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <span className="text-sm text-slate-700">{bill.sponsor}</span>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <Badge className={getStatusColor(bill.status)}>
                             {bill.status}
                           </Badge>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <Badge className={getPositionColor(bill.position)}>
                             {bill.position}
                           </Badge>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <Badge className={getPriorityColor(bill.priority)}>
                             {bill.priority}
                           </Badge>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <span className="text-sm text-slate-700">
                             {bill.client_id ? clients.find(c => c.id === bill.client_id)?.name || 'Unknown' : 'No client'}
                           </span>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => openNotesModal(bill)}
+                              className="h-8 w-8 p-0"
                             >
-                              <FileText className="h-4 w-4 mr-1" />
-                              Notes
+                              <FileText className="h-4 w-4" />
                             </Button>
                             <Select value={bill.priority} onValueChange={(value: any) => handleUpdatePriority(bill.id, value)}>
                               <SelectTrigger className="w-24 h-8">
@@ -608,17 +613,18 @@ export default function BillsPage() {
                               </SelectContent>
                             </Select>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleToggleWatchlist(bill.id)}
                               disabled={actionLoading === bill.id}
+                              className="h-8 w-8 p-0"
                             >
                               {actionLoading === bill.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : bill.watchlist ? (
-                                <EyeOff className="h-4 w-4" />
+                                <Star className="h-4 w-4 text-yellow-500 fill-current" />
                               ) : (
-                                <Eye className="h-4 w-4" />
+                                <Star className="h-4 w-4 text-slate-400" />
                               )}
                             </Button>
                           </div>
