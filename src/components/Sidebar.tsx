@@ -106,12 +106,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   ];
 
   return (
-    <div className={`bg-slate-900 text-white transition-all duration-300 ${
+    <div className={`bg-slate-900/95 backdrop-blur-md text-white transition-all duration-300 h-screen ${
       collapsed ? 'w-16' : 'w-64'
     }`}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700/50">
           {!collapsed && (
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold">
@@ -144,8 +144,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 href={item.href}
                 className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   item.current
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-slate-800/80 text-white'
+                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                 }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
@@ -157,7 +157,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           })}
         </nav>
 
-        <Separator className="bg-slate-800" />
+        <Separator className="bg-slate-700/50" />
 
         {/* Tools Section */}
         <div className="px-3 py-4">
@@ -175,8 +175,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     item.current
-                      ? 'bg-slate-800 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      ? 'bg-slate-800/80 text-white'
+                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                   }`}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
@@ -190,7 +190,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        <div className="px-3 py-4 border-t border-slate-700/50">
           {!collapsed && (
             <div className="text-xs text-slate-400 text-center">
               Little Bird v1.0
