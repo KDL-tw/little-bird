@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,18 +15,24 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [adminBypass, setAdminBypass] = useState(false);
+  const [clientLoaded, setClientLoaded] = useState(false);
 
   useEffect(() => {
-    // Check for admin bypass flag
-    const adminBypass = sessionStorage.getItem('adminBypass');
-    
-    if (!loading && !user && !adminBypass) {
+    // Check for admin bypass flag on client side only
+    const bypass = sessionStorage.getItem('adminBypass') === 'true';
+    setAdminBypass(bypass);
+    setClientLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (clientLoaded && !loading && !user && !adminBypass) {
       router.push(redirectTo);
     }
-  }, [user, loading, router, redirectTo]);
+  }, [user, loading, adminBypass, clientLoaded, router, redirectTo]);
 
-  // Show loading spinner while checking auth
-  if (loading) {
+  // Show loading spinner while checking auth or loading client
+  if (loading || !clientLoaded) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -37,9 +43,6 @@ export function ProtectedRoute({
     );
   }
 
-  // Check for admin bypass flag
-  const adminBypass = sessionStorage.getItem('adminBypass');
-  
   // Show nothing while redirecting
   if (!user && !adminBypass) {
     return null;

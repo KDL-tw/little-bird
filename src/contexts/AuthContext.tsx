@@ -47,11 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Redirect based on auth state
-        if (event === 'SIGNED_IN') {
-          router.push('/dashboard');
-        } else if (event === 'SIGNED_OUT') {
-          router.push('/login');
+        // Only redirect on explicit sign out, not on initial load
+        if (event === 'SIGNED_OUT' && session === null) {
+          // Only redirect if we're not on a dashboard page and no admin bypass
+          const currentPath = window.location.pathname;
+          const isDashboardPage = currentPath.startsWith('/dashboard');
+          const adminBypass = sessionStorage.getItem('adminBypass');
+          
+          if (!isDashboardPage && !adminBypass) {
+            router.push('/login');
+          }
         }
       }
     );
