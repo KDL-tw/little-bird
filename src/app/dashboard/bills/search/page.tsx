@@ -90,15 +90,20 @@ export default function BillSearchPage() {
       setErrorMessage(null);
       setSearchResults([]);
       
-      // Build URL exactly like the working test
-      let url = '/api/openstates/bills?state=co';
+      // Use our internal search API instead of OpenStates
+      let url = '/api/search/bills';
+      const params = new URLSearchParams();
       
-      // Only add query if there's actually a search term
       if (searchTerm.trim()) {
-        url += `&q=${encodeURIComponent(searchTerm.trim())}`;
+        params.append('q', searchTerm.trim());
+      }
+      params.append('limit', '20');
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
       }
       
-      console.log('Search URL:', url);
+      console.log('Internal search URL:', url);
       
       const response = await fetch(url);
       
@@ -107,11 +112,11 @@ export default function BillSearchPage() {
       }
       
       const data = await response.json();
-      console.log('Search response:', data);
+      console.log('Internal search response:', data);
       
-      if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+      if (data.success && data.data && Array.isArray(data.data)) {
         setSearchResults(data.data);
-        setErrorMessage(null);
+        setErrorMessage(data.data.length === 0 ? 'No bills found matching your search' : null);
       } else {
         setSearchResults([]);
         setErrorMessage(data.error || 'No bills found matching your search');
