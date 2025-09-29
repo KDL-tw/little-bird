@@ -41,10 +41,30 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
+    console.log('OpenStates API response:', {
+      status: response.status,
+      dataType: typeof data,
+      dataKeys: data ? Object.keys(data) : 'null',
+      dataLength: Array.isArray(data) ? data.length : 'not array'
+    });
+    
+    // Handle different response formats
+    let bills = [];
+    if (Array.isArray(data)) {
+      bills = data;
+    } else if (data.results && Array.isArray(data.results)) {
+      bills = data.results;
+    } else if (data.data && Array.isArray(data.data)) {
+      bills = data.data;
+    } else if (data.bills && Array.isArray(data.bills)) {
+      bills = data.bills;
+    }
+    
     return NextResponse.json({
       success: true,
-      data: data,
-      count: data.length
+      data: bills,
+      count: bills.length,
+      originalData: data
     });
 
   } catch (error) {
