@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { useState } from "react";
 import { 
   Database, 
@@ -28,14 +29,11 @@ interface SyncResult {
 export default function AdminDashboard() {
   const [billsSync, setBillsSync] = useState<SyncResult | null>(null);
   const [legislatorsSync, setLegislatorsSync] = useState<SyncResult | null>(null);
-  const [testSync, setTestSync] = useState<SyncResult | null>(null);
-  const [simpleTest, setSimpleTest] = useState<SyncResult | null>(null);
+  const [fullSync, setFullSync] = useState<SyncResult | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
   const syncBills = async () => {
     setLoading('bills');
-    setBillsSync(null);
-    
     try {
       const response = await fetch('/api/sync/bills', { method: 'POST' });
       const result = await response.json();
@@ -53,8 +51,6 @@ export default function AdminDashboard() {
 
   const syncLegislators = async () => {
     setLoading('legislators');
-    setLegislatorsSync(null);
-    
     try {
       const response = await fetch('/api/sync/legislators', { method: 'POST' });
       const result = await response.json();
@@ -70,37 +66,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const syncTest = async () => {
-    setLoading('test');
-    setTestSync(null);
-    
+  const syncFull = async () => {
+    setLoading('full');
     try {
-      const response = await fetch('/api/test-sync', { method: 'POST' });
+      const response = await fetch('/api/ingestion/foundation', { method: 'POST' });
       const result = await response.json();
-      setTestSync(result);
+      setFullSync(result);
     } catch (error) {
-      setTestSync({
+      setFullSync({
         success: false,
-        message: 'Failed to sync test data',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const testSimple = async () => {
-    setLoading('simple');
-    setSimpleTest(null);
-    
-    try {
-      const response = await fetch('/api/test-sync-simple', { method: 'POST' });
-      const result = await response.json();
-      setSimpleTest(result);
-    } catch (error) {
-      setSimpleTest({
-        success: false,
-        message: 'Failed to test simple sync',
+        message: 'Failed to perform full sync',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     } finally {
@@ -109,354 +84,316 @@ export default function AdminDashboard() {
   };
 
   const testEnvironment = async () => {
+    setLoading('test');
     try {
       const response = await fetch('/api/test-simple');
       const result = await response.json();
-      console.log('Environment test:', result);
-      alert(`Environment test: ${JSON.stringify(result, null, 2)}`);
+      console.log('Environment test result:', result);
+      alert('Environment test completed. Check console for details.');
     } catch (error) {
-      console.error('Environment test error:', error);
-      alert(`Environment test failed: ${error}`);
+      console.error('Environment test failed:', error);
+      alert('Environment test failed. Check console for details.');
+    } finally {
+      setLoading(null);
     }
   };
 
-  const syncAll = async () => {
-    await syncBills();
-    await syncLegislators();
+  const testDatabase = async () => {
+    setLoading('db');
+    try {
+      const response = await fetch('/api/test-sync-simple', { method: 'POST' });
+      const result = await response.json();
+      console.log('Database test result:', result);
+      alert('Database test completed. Check console for details.');
+    } catch (error) {
+      console.error('Database test failed:', error);
+      alert('Database test failed. Check console for details.');
+    } finally {
+      setLoading(null);
+    }
   };
 
+  const loadTestData = async () => {
+    setLoading('testdata');
+    try {
+      const response = await fetch('/api/test-sync', { method: 'POST' });
+      const result = await response.json();
+      console.log('Test data load result:', result);
+      alert('Test data loaded. Check console for details.');
+    } catch (error) {
+      console.error('Test data load failed:', error);
+      alert('Test data load failed. Check console for details.');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const actions = (
+    <div className="flex items-center space-x-2">
+      <Button variant="outline" size="sm" onClick={testEnvironment} disabled={loading === 'test'}>
+        {loading === 'test' ? (
+          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <Settings className="h-4 w-4 mr-2" />
+        )}
+        Test Environment
+      </Button>
+      <Button variant="outline" size="sm" onClick={testDatabase} disabled={loading === 'db'}>
+        {loading === 'db' ? (
+          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <Database className="h-4 w-4 mr-2" />
+        )}
+        Test Database
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-slate-900">
-                <span className="text-slate-500">LITTLE</span><span className="text-slate-900">BIRD</span>
-              </h1>
-              <Badge variant="outline" className="ml-4">Admin</Badge>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Data Sync Dashboard</h1>
-          <p className="text-slate-600">Manage data synchronization from external sources to our internal database.</p>
-        </div>
-
-        {/* Sync Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                Bills Sync
-              </CardTitle>
-              <CardDescription>
-                Sync Colorado bills from OpenStates API to our database
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button 
-                onClick={syncBills} 
-                disabled={loading === 'bills'}
-                className="w-full"
-              >
-                {loading === 'bills' ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Syncing...
-                  </>
-                ) : (
-                  <>
-                    <Database className="h-4 w-4 mr-2" />
-                    Sync Bills
-                  </>
-                )}
-              </Button>
-              
-              {billsSync && (
-                <div className={`p-3 rounded-lg border ${
-                  billsSync.success 
-                    ? 'bg-green-50 border-green-200 text-green-800' 
-                    : 'bg-red-50 border-red-200 text-red-800'
-                }`}>
-                  <div className="flex items-center">
-                    {billsSync.success ? (
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                    )}
-                    <span className="font-medium">{billsSync.message}</span>
-                  </div>
-                  {billsSync.count && (
-                    <p className="text-sm mt-1">Synced {billsSync.count} bills</p>
-                  )}
-                  {billsSync.error && (
-                    <p className="text-sm mt-1">{billsSync.error}</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                Legislators Sync
-              </CardTitle>
-              <CardDescription>
-                Sync Colorado legislators from OpenStates API to our database
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button 
-                onClick={syncLegislators} 
-                disabled={loading === 'legislators'}
-                className="w-full"
-              >
-                {loading === 'legislators' ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Syncing...
-                  </>
-                ) : (
-                  <>
-                    <Database className="h-4 w-4 mr-2" />
-                    Sync Legislators
-                  </>
-                )}
-              </Button>
-              
-              {legislatorsSync && (
-                <div className={`p-3 rounded-lg border ${
-                  legislatorsSync.success 
-                    ? 'bg-green-50 border-green-200 text-green-800' 
-                    : 'bg-red-50 border-red-200 text-red-800'
-                }`}>
-                  <div className="flex items-center">
-                    {legislatorsSync.success ? (
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                    )}
-                    <span className="font-medium">{legislatorsSync.message}</span>
-                  </div>
-                  {legislatorsSync.count && (
-                    <p className="text-sm mt-1">Synced {legislatorsSync.count} legislators</p>
-                  )}
-                  {legislatorsSync.error && (
-                    <p className="text-sm mt-1">{legislatorsSync.error}</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Debug Tests */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Globe className="h-5 w-5 mr-2" />
-                Environment Test
-              </CardTitle>
-              <CardDescription>
-                Check if environment variables are configured
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={testEnvironment}
-                className="w-full"
-                variant="outline"
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                Test Environment
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Database className="h-5 w-5 mr-2" />
-                Simple Database Test
-              </CardTitle>
-              <CardDescription>
-                Test database connection with one record
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button 
-                onClick={testSimple} 
-                disabled={loading === 'simple'}
-                className="w-full"
-                variant="outline"
-              >
-                {loading === 'simple' ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Testing...
-                  </>
-                ) : (
-                  <>
-                    <Database className="h-4 w-4 mr-2" />
-                    Test Database
-                  </>
-                )}
-              </Button>
-              
-              {simpleTest && (
-                <div className={`p-3 rounded-lg border ${
-                  simpleTest.success 
-                    ? 'bg-green-50 border-green-200 text-green-800' 
-                    : 'bg-red-50 border-red-200 text-red-800'
-                }`}>
-                  <div className="flex items-center">
-                    {simpleTest.success ? (
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                    )}
-                    <span className="font-medium">{simpleTest.message}</span>
-                  </div>
-                  {simpleTest.error && (
-                    <p className="text-sm mt-1">{simpleTest.error}</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Test Sync */}
-        <Card className="mb-8">
+    <DashboardLayout
+      title="Data Sync Dashboard"
+      subtitle="Manage data synchronization from external sources to our internal database"
+      actions={actions}
+    >
+      {/* Sync Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Test Sync (Sample Data)
+              <FileText className="h-5 w-5 mr-2" />
+              Bills Sync
             </CardTitle>
             <CardDescription>
-              Load sample data to test the system without external API calls
+              Sync Colorado bills from OpenStates API to our database
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button 
-              onClick={syncTest} 
-              disabled={loading === 'test'}
+              onClick={syncBills} 
+              disabled={loading === 'bills'}
               className="w-full"
-              size="lg"
             >
-              {loading === 'test' ? (
+              {loading === 'bills' ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Loading Test Data...
+                  Syncing...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Load Test Data
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sync Bills
                 </>
               )}
             </Button>
             
-            {testSync && (
-              <div className={`p-3 rounded-lg border ${
-                testSync.success 
-                  ? 'bg-green-50 border-green-200 text-green-800' 
-                  : 'bg-red-50 border-red-200 text-red-800'
+            {billsSync && (
+              <div className={`p-3 rounded-lg ${
+                billsSync.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
               }`}>
                 <div className="flex items-center">
-                  {testSync.success ? (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                  {billsSync.success ? (
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                   ) : (
-                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
                   )}
-                  <span className="font-medium">{testSync.message}</span>
+                  <span className={`text-sm font-medium ${
+                    billsSync.success ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {billsSync.message}
+                  </span>
                 </div>
-                {testSync.bills_count && testSync.legislators_count && (
-                  <p className="text-sm mt-1">
-                    Loaded {testSync.bills_count} bills and {testSync.legislators_count} legislators
+                {billsSync.count && (
+                  <p className="text-sm text-green-700 mt-1">
+                    {billsSync.count} bills synced
                   </p>
                 )}
-                {testSync.error && (
-                  <p className="text-sm mt-1">{testSync.error}</p>
+                {billsSync.error && (
+                  <p className="text-sm text-red-700 mt-1">
+                    Error: {billsSync.error}
+                  </p>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Full Sync */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <RefreshCw className="h-5 w-5 mr-2" />
-              Full Sync (External APIs)
-            </CardTitle>
-            <CardDescription>
-              Sync all data sources from external APIs at once
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={syncAll} 
-              disabled={loading !== null}
-              className="w-full"
-              size="lg"
-              variant="outline"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Syncing All Data...
-                </>
-              ) : (
-                <>
-                  <Database className="h-4 w-4 mr-2" />
-                  Sync All Data
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Status Overview */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <BarChart3 className="h-5 w-5 mr-2" />
-              System Status
+              <Users className="h-5 w-5 mr-2" />
+              Legislators Sync
             </CardTitle>
             <CardDescription>
-              Current status of data sources and sync operations
+              Sync Colorado legislators from OpenStates API to our database
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Internal Database</span>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={syncLegislators} 
+              disabled={loading === 'legislators'}
+              className="w-full"
+            >
+              {loading === 'legislators' ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sync Legislators
+                </>
+              )}
+            </Button>
+            
+            {legislatorsSync && (
+              <div className={`p-3 rounded-lg ${
+                legislatorsSync.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+              }`}>
+                <div className="flex items-center">
+                  {legislatorsSync.success ? (
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    legislatorsSync.success ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {legislatorsSync.message}
+                  </span>
+                </div>
+                {legislatorsSync.count && (
+                  <p className="text-sm text-green-700 mt-1">
+                    {legislatorsSync.count} legislators synced
+                  </p>
+                )}
+                {legislatorsSync.error && (
+                  <p className="text-sm text-red-700 mt-1">
+                    Error: {legislatorsSync.error}
+                  </p>
+                )}
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">OpenStates API</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm">Sync Status</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      {/* Full Sync */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Database className="h-5 w-5 mr-2" />
+            Full Sync (Foundation Layer)
+          </CardTitle>
+          <CardDescription>
+            Sync all data from OpenStates API using the Foundation Layer approach
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button 
+            onClick={syncFull} 
+            disabled={loading === 'full'}
+            className="w-full"
+            variant="outline"
+          >
+            {loading === 'full' ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Full Sync in Progress...
+              </>
+            ) : (
+              <>
+                <Database className="h-4 w-4 mr-2" />
+                Full Sync
+              </>
+            )}
+          </Button>
+          
+          {fullSync && (
+            <div className={`p-3 rounded-lg ${
+              fullSync.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+            }`}>
+              <div className="flex items-center">
+                {fullSync.success ? (
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
+                )}
+                <span className={`text-sm font-medium ${
+                  fullSync.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {fullSync.message}
+                </span>
+              </div>
+              {fullSync.count && (
+                <p className="text-sm text-green-700 mt-1">
+                  {fullSync.count} records synced
+                </p>
+              )}
+              {fullSync.error && (
+                <p className="text-sm text-red-700 mt-1">
+                  Error: {fullSync.error}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Debug Tools */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Settings className="h-5 w-5 mr-2" />
+            Debug Tools
+          </CardTitle>
+          <CardDescription>
+            Test environment and database connectivity
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button 
+              onClick={testEnvironment} 
+              disabled={loading === 'test'}
+              variant="outline"
+            >
+              {loading === 'test' ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Settings className="h-4 w-4 mr-2" />
+              )}
+              Test Environment
+            </Button>
+            
+            <Button 
+              onClick={testDatabase} 
+              disabled={loading === 'db'}
+              variant="outline"
+            >
+              {loading === 'db' ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Database className="h-4 w-4 mr-2" />
+              )}
+              Test Database
+            </Button>
+            
+            <Button 
+              onClick={loadTestData} 
+              disabled={loading === 'testdata'}
+              variant="outline"
+            >
+              {loading === 'testdata' ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <BarChart3 className="h-4 w-4 mr-2" />
+              )}
+              Load Test Data
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </DashboardLayout>
   );
 }
