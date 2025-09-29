@@ -142,10 +142,10 @@ export default function Dashboard() {
             <CardDescription>Common tasks and shortcuts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/dashboard/bills/search-simple">
+            <Link href="/dashboard/my-bills">
               <Button className="w-full justify-start" variant="outline">
                 <Search className="h-4 w-4 mr-2" />
-                Search Bills
+                My Bills
               </Button>
             </Link>
             <Link href="/dashboard/legislators/search">

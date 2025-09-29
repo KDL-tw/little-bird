@@ -122,7 +122,12 @@ export default function SimpleBillsSearch() {
       
       await billsDataService.create(billData);
       setAddBillOpen(false);
-      setSuccessMessage(`Bill ${selectedBill.identifier} added to tracking!`);
+      setSuccessMessage(`Bill ${selectedBill.identifier} added to tracking! Redirecting to My Bills...`);
+      
+      // Redirect to My Bills after a short delay
+      setTimeout(() => {
+        window.location.href = '/dashboard/my-bills';
+      }, 2000);
       
       // Reset form
       setNewBill({
