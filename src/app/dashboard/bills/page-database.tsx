@@ -89,7 +89,7 @@ export default function BillsPage() {
     try {
       const newBill = await billsService.create({
         ...formData,
-        ai_analysis: null
+        ai_analysis: undefined
       });
       setBills([...bills, newBill]);
       setFormData({

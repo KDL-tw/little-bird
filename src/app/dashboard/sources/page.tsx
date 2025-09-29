@@ -24,7 +24,9 @@ import {
   Globe,
   Newspaper,
   Video,
-  MessageSquare
+  MessageSquare,
+  FileText,
+  Users
 } from 'lucide-react';
 
 interface SourceStatus {
