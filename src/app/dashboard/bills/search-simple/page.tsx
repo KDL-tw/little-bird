@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Search, ArrowLeft, Loader2, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { billsService, clientsService } from '@/lib/database';
+import { billsDataService, clientsDataService } from '@/lib/database';
 import type { Client } from '@/lib/supabase';
 
 interface OpenStatesBill {
@@ -51,7 +51,7 @@ export default function SimpleBillsSearch() {
 
   const loadClients = async () => {
     try {
-      const data = await clientsService.getAll();
+      const data = await clientsDataService.getAll();
       setClients(data);
     } catch (error) {
       console.error('Error loading clients:', error);
@@ -120,7 +120,7 @@ export default function SimpleBillsSearch() {
         openstates_data: selectedBill
       };
       
-      await billsService.create(billData);
+      await billsDataService.create(billData);
       setAddBillOpen(false);
       setSuccessMessage(`Bill ${selectedBill.identifier} added to tracking!`);
       

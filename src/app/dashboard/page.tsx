@@ -23,7 +23,7 @@ import {
   Search,
   BarChart3
 } from "lucide-react";
-import { billsService, legislatorsService } from "@/lib/database";
+import { billsDataService, legislatorsDataService } from "@/lib/database";
 
 export default function Dashboard() {
   const [platformOverviewOpen, setPlatformOverviewOpen] = useState(false);
@@ -39,8 +39,8 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const [bills, legislators] = await Promise.all([
-        billsService.getAll(),
-        legislatorsService.getAll()
+        billsDataService.getAll(),
+        legislatorsDataService.getAll()
       ]);
       setBillsCount(bills.length);
       setLegislatorsCount(legislators.length);

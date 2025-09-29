@@ -28,7 +28,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { clientsService, contactsService, userActionsService } from '@/lib/database';
+import { clientsDataService, contactsDataService, userActionsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import type { Client, Contact } from '@/lib/supabase';
@@ -75,7 +75,7 @@ export default function ClientsPage() {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const data = await clientsService.getAll();
+      const data = await clientsDataService.getAll();
       setClients(data);
     } catch (error) {
       console.error('Error loading clients:', error);
@@ -97,7 +97,7 @@ export default function ClientsPage() {
   const handleAddClient = async () => {
     try {
       setLoading(true);
-      await clientsService.create(newClient);
+      await clientsDataService.create(newClient);
       setAddClientOpen(false);
       setSuccessMessage('Client added successfully!');
       setNewClient({
@@ -147,7 +147,7 @@ export default function ClientsPage() {
   const handleDeleteClient = async (id: string) => {
     if (confirm('Are you sure you want to delete this client?')) {
       try {
-        await clientsService.delete(id);
+        await clientsDataService.delete(id);
         setSuccessMessage('Client deleted successfully!');
         loadClients();
       } catch (error) {

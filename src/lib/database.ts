@@ -9,7 +9,7 @@ const isSupabaseConfigured = () => {
 };
 
 // Bills Service
-export const billsService = {
+export const billsDataService = {
   async getAll(): Promise<Bill[]> {
     if (!isSupabaseConfigured()) {
       // Return mock data when Supabase isn't configured
@@ -164,7 +164,7 @@ export const billsService = {
 }
 
 // Legislators Service
-export const legislatorsService = {
+export const legislatorsDataService = {
   async getAll(): Promise<Legislator[]> {
     if (!isSupabaseConfigured()) {
       // Return mock data when Supabase isn't configured
@@ -745,7 +745,7 @@ export const meetingNotesService = {
 }
 
 // Clients Service
-export const clientsService = {
+export const clientsDataService = {
   async getAll(): Promise<Client[]> {
     if (!isSupabaseConfigured()) {
       return [];
@@ -805,7 +805,7 @@ export const clientsService = {
 }
 
 // Contacts Service
-export const contactsService = {
+export const contactsDataService = {
   async getByClientId(clientId: string): Promise<Contact[]> {
     if (!isSupabaseConfigured()) {
       return [];
@@ -905,7 +905,7 @@ export const billNotesService = {
 }
 
 // User Actions Service (for tracking)
-export const userActionsService = {
+export const userActionsDataService = {
   async logAction(action: Omit<UserAction, 'id' | 'created_at'>): Promise<UserAction> {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase not configured');

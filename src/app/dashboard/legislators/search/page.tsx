@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Search, Plus, ArrowLeft, Loader2, CheckCircle, AlertCircle, User, MapPin, Phone, Mail, Users } from 'lucide-react';
-import { legislatorsService } from '@/lib/database';
+import { legislatorsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Link from 'next/link';
@@ -116,7 +116,7 @@ export default function LegislatorsSearchPage() {
         last_contact_date: null
       };
       
-      await legislatorsService.create(legislatorData);
+      await legislatorsDataService.create(legislatorData);
       setAddLegislatorOpen(false);
       setSuccessMessage(`Legislator ${selectedLegislator.name} added successfully!`);
       setSelectedLegislator(null);
