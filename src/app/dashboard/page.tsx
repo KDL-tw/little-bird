@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+// import { useAuth } from "@/contexts/AuthContext";
 // import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { 
   BarChart3, 
@@ -40,10 +40,15 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [email, setEmail] = useState('');
+
+  // Use static values for now to avoid auth issues
+  const user = null; // Will be populated when auth is working
+  const signOut = async () => {
+    console.log('Sign out requested');
+  };
 
   const handleEarlyAccessRequest = () => {
     // In a real app, this would send the email to a backend
