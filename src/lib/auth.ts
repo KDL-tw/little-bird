@@ -2,6 +2,13 @@
 import { supabase } from './supabase';
 import type { User, Session } from '@supabase/supabase-js';
 
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL && 
+         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+         process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+};
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -25,6 +32,10 @@ export interface SignInData {
 export class AuthService {
   // Sign up with email and password
   async signUp(data: SignUpData): Promise<{ user: User | null; error: Error | null }> {
+    if (!isSupabaseConfigured()) {
+      return { user: null, error: new Error('Supabase not configured') };
+    }
+    
     try {
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
@@ -51,6 +62,10 @@ export class AuthService {
 
   // Sign in with email and password
   async signIn(data: SignInData): Promise<{ user: User | null; error: Error | null }> {
+    if (!isSupabaseConfigured()) {
+      return { user: null, error: new Error('Supabase not configured') };
+    }
+    
     try {
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,

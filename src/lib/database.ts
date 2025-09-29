@@ -1,9 +1,20 @@
 import { supabase } from './supabase'
 import type { Bill, Legislator, Note, Meeting, Aide, Associate, AffinityGroup, BillSponsor, IntelligenceSignal, MeetingNote } from './supabase'
 
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL && 
+         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+         process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+};
+
 // Bills Service
 export const billsService = {
   async getAll(): Promise<Bill[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('bills')
       .select('*')
@@ -60,6 +71,10 @@ export const billsService = {
 // Legislators Service
 export const legislatorsService = {
   async getAll(): Promise<Legislator[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('legislators')
       .select('*')
