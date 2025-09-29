@@ -17,26 +17,14 @@ interface SearchResult {
 
 export class FiscalNoteAgentA {
   private async searchColoradoGeneralAssembly(query: string): Promise<SearchResult[]> {
-    // This is a simplified search implementation
-    // In production, you'd use a proper web scraping service or API
+    // TODO: Implement actual web scraping of Colorado General Assembly website
+    // This would involve:
+    // 1. Scraping the CO General Assembly fiscal notes page
+    // 2. Searching for bills by identifier
+    // 3. Extracting fiscal note URLs
+    // 4. Validating that URLs point to actual fiscal notes
     
-    try {
-      // For now, we'll simulate a search result
-      // In production, you'd implement actual web scraping of the CO General Assembly site
-      const mockResults: SearchResult[] = [
-        {
-          title: `Fiscal Note - ${query}`,
-          url: `https://leg.colorado.gov/sites/default/files/fiscal_notes/${query.replace(/\s+/g, '_').toLowerCase()}_fiscal_note.pdf`,
-          snippet: `Fiscal impact analysis for ${query}`,
-          relevanceScore: 0.95
-        }
-      ];
-
-      return mockResults;
-    } catch (error) {
-      console.error('Error searching Colorado General Assembly:', error);
-      return [];
-    }
+    throw new Error('Colorado General Assembly search not yet implemented. Please implement web scraping functionality.');
   }
 
   private async isFiscalNote(url: string, billIdentifier: string): Promise<boolean> {

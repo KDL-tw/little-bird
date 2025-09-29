@@ -62,40 +62,9 @@ export function FiscalNoteViewer({ billId, onClose }: FiscalNoteViewerProps) {
       setLoading(true);
       setError(null);
 
-      // This would fetch from your API
-      // For now, we'll use mock data
-      const mockFiscalNote: FiscalNoteData = {
-        id: 'fn-123',
-        summary: 'This bill would require utilities to achieve 80% renewable energy by 2030 and 100% by 2040, with an estimated total cost of $2.6 billion over 10 years.',
-        keyFindings: [
-          'Estimated total cost: $2.6 billion over 10 years',
-          'State impact: $2.5 billion in utility infrastructure investments',
-          'Local impact: $100 million in increased utility costs',
-          'Revenue impact: $500 million in new renewable energy tax credits',
-          'Implementation timeline: Phased approach beginning 2026'
-        ],
-        fiscalImpact: {
-          stateImpact: '$2.5 billion in utility infrastructure investments over 10 years',
-          localImpact: '$100 million in increased utility costs for local governments',
-          totalCost: '$2.6 billion total estimated cost over 10 years',
-          revenueImpact: 'Net revenue impact of -$300 million after tax credits',
-          timeline: 'Phased implementation: 2026-2040'
-        },
-        sourceUrl: 'https://leg.colorado.gov/sites/default/files/fiscal_notes/hb25-1001_fiscal_note.pdf',
-        processingStatus: 'Completed',
-        lastProcessedAt: '2024-01-15T10:30:00Z',
-        versions: [
-          {
-            id: 'v1',
-            versionNumber: 1,
-            createdAt: '2024-01-15T10:30:00Z',
-            changesDetected: [],
-            changeSummary: 'Initial version'
-          }
-        ]
-      };
-
-      setFiscalNote(mockFiscalNote);
+      // TODO: Implement actual API call to fetch fiscal note data
+      // This would call your fiscal note API endpoint
+      throw new Error('Fiscal note API not yet implemented. Please implement the API endpoint to fetch fiscal note data.');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load fiscal note');
     } finally {

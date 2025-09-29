@@ -25,51 +25,16 @@ interface FiscalNoteContent {
 export class FiscalNoteAgentB {
   private async fetchDocumentContent(url: string): Promise<string> {
     try {
-      // This is a simplified implementation
-      // In production, you'd use a proper document fetching service
-      // that can handle PDFs, Word docs, etc.
+      // TODO: Implement actual document fetching
+      // This would involve:
+      // 1. Detecting document type (PDF, Word, HTML, etc.)
+      // 2. Using appropriate parsing library (pdf-parse, mammoth, etc.)
+      // 3. Extracting text content
+      // 4. Handling various document formats
       
       console.log(`📄 Agent B: Fetching document from ${url}`);
       
-      // For now, we'll simulate fetching content
-      // In production, you'd implement actual document fetching
-      const mockContent = `
-        FISCAL NOTE
-        
-        Bill: HB25-1001
-        Title: Colorado Clean Energy Act
-        
-        FISCAL IMPACT SUMMARY
-        This bill would require utilities to achieve 80% renewable energy by 2030 and 100% by 2040.
-        
-        STATE IMPACT
-        - Estimated cost to state: $2.5 billion over 10 years
-        - Revenue impact: $500 million in new renewable energy tax credits
-        - Implementation timeline: Phased approach beginning 2026
-        
-        LOCAL IMPACT
-        - Local governments may see increased utility costs
-        - Potential for new renewable energy projects in rural areas
-        - Estimated local cost: $100 million over 10 years
-        
-        TOTAL COST
-        - State: $2.5 billion
-        - Local: $100 million
-        - Total: $2.6 billion over 10 years
-        
-        REVENUE IMPACT
-        - New tax credits: $500 million
-        - Renewable energy tax revenue: $200 million
-        - Net revenue impact: -$300 million
-        
-        IMPLEMENTATION TIMELINE
-        - 2026: Begin utility planning requirements
-        - 2028: First renewable energy targets take effect
-        - 2030: 80% renewable energy target
-        - 2040: 100% clean energy target
-      `;
-
-      return mockContent;
+      throw new Error('Document fetching not yet implemented. Please implement PDF/Word document parsing.');
     } catch (error) {
       console.error('Error fetching document content:', error);
       throw new Error(`Failed to fetch document: ${error instanceof Error ? error.message : 'Unknown error'}`);
