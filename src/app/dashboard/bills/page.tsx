@@ -29,6 +29,7 @@ import {
 import { billsService, billNotesService, clientsService, userActionsService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import Link from 'next/link';
 import type { Bill, BillNote, Client } from '@/lib/supabase';
 
 export default function BillsPage() {
@@ -303,13 +304,20 @@ export default function BillsPage() {
               <h1 className="text-3xl font-bold text-slate-900">Bills Tracker</h1>
               <p className="text-slate-600 mt-1">Track and manage Colorado legislation</p>
             </div>
-            <Dialog open={addBillOpen} onOpenChange={setAddBillOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Bill
+            <div className="flex space-x-2">
+              <Link href="/dashboard/bills/search">
+                <Button variant="outline">
+                  <Search className="h-4 w-4 mr-2" />
+                  Search Bills
                 </Button>
-              </DialogTrigger>
+              </Link>
+              <Dialog open={addBillOpen} onOpenChange={setAddBillOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Bill
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Add New Bill</DialogTitle>
