@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2, Users } from 'lucide-react';
 import { billsService, clientsService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -77,6 +77,55 @@ export default function BillsPage() {
     } catch (error) {
       console.error('Error adding bill:', error);
       setErrorMessage('Failed to add bill');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleExtractSponsors = async (bill: Bill) => {
+    try {
+      setActionLoading(bill.id);
+      
+      // First, get the bill sponsors from OpenStates
+      const response = await fetch(`/api/openstates/bill-sponsors?bill_id=${bill.id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch bill sponsors');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+      
+      // Add sponsors to legislator database
+      const addResponse = await fetch('/api/legislators/add-from-bill', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ billId: bill.id }),
+      });
+      
+      if (!addResponse.ok) {
+        throw new Error('Failed to add sponsors to database');
+      }
+      
+      const addData = await addResponse.json();
+      
+      if (addData.success) {
+        setSuccessMessage(
+          `Extracted ${addData.addedCount} new legislators from ${bill.bill_number}. ` +
+          `${addData.skippedCount} were already in the database.`
+        );
+      } else {
+        throw new Error(addData.error);
+      }
+      
+    } catch (error) {
+      console.error('Error extracting sponsors:', error);
+      setErrorMessage('Failed to extract sponsors from bill');
     } finally {
       setActionLoading(null);
     }
@@ -303,6 +352,7 @@ export default function BillsPage() {
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Position</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Priority</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Client</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -340,6 +390,22 @@ export default function BillsPage() {
                           <span className="text-sm text-slate-700">
                             {bill.client_id ? clients.find(c => c.id === bill.client_id)?.name || 'Unknown' : 'No client'}
                           </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExtractSponsors(bill)}
+                            disabled={actionLoading === bill.id}
+                            className="text-indigo-600 hover:text-indigo-700"
+                          >
+                            {actionLoading === bill.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Users className="h-4 w-4 mr-1" />
+                            )}
+                            Extract Sponsors
+                          </Button>
                         </td>
                       </tr>
                     ))}
