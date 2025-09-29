@@ -11,9 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { 
   Plus, 
-  Search, 
   Users, 
   Building2, 
   Mail, 
@@ -24,75 +24,47 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  Tag,
   UserPlus,
-  Filter
+  Search,
+  Filter,
+  Tag,
+  Calendar
 } from 'lucide-react';
+import { contactsService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-
-interface GeneralContact {
-  id: string;
-  name: string;
-  title?: string;
-  organization?: string;
-  contact_type: 'Legislator' | 'Aide' | 'Lobbyist' | 'Stakeholder' | 'Staff' | 'Other';
-  email?: string;
-  phone?: string;
-  office_location?: string;
-  notes?: string;
-  relationship_strength: 'Strong' | 'Good' | 'Neutral' | 'Weak' | 'Unknown';
-  last_contact_date?: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { Contact } from '@/lib/supabase';
 
 interface IssueTag {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   color: string;
-}
-
-interface ContactIssue {
-  id: string;
-  contact_id: string;
-  issue_id: string;
-  expertise_level: 'Expert' | 'Knowledgeable' | 'Familiar' | 'Basic';
-  notes?: string;
 }
 
 export default function ContactsPage() {
   const { user } = useAuth();
-  const [contacts, setContacts] = useState<GeneralContact[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [issueTags, setIssueTags] = useState<IssueTag[]>([]);
-  const [contactIssues, setContactIssues] = useState<ContactIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('All');
-  const [issueFilter, setIssueFilter] = useState<string>('All');
-  
-  // Modal states
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [relationshipFilter, setRelationshipFilter] = useState('all');
   const [addContactOpen, setAddContactOpen] = useState(false);
-  const [editContactOpen, setEditContactOpen] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<GeneralContact | null>(null);
-  
-  // Action states
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Form states
   const [newContact, setNewContact] = useState({
     name: '',
     title: '',
     organization: '',
-    contact_type: 'Other' as GeneralContact['contact_type'],
+    contact_type: 'Stakeholder' as 'Legislator' | 'Aide' | 'Lobbyist' | 'Stakeholder' | 'Staff' | 'Other',
     email: '',
     phone: '',
     office_location: '',
+    relationship_strength: 'Medium' as 'High' | 'Medium' | 'Low' | 'None',
     notes: '',
-    relationship_strength: 'Unknown' as GeneralContact['relationship_strength']
+    issue_tags: [] as string[]
   });
 
   useEffect(() => {
@@ -102,39 +74,10 @@ export default function ContactsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API calls when backend is ready
-      // For now, using mock data
-      setContacts([
-        {
-          id: '1',
-          name: 'Sen. Chris Hansen',
-          title: 'State Senator',
-          organization: 'Colorado Senate',
-          contact_type: 'Legislator',
-          email: 'chris.hansen@coleg.gov',
-          phone: '(303) 866-4882',
-          office_location: 'Room 200',
-          relationship_strength: 'Strong',
-          notes: 'Key ally on transportation and environment issues',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Sarah Johnson',
-          title: 'Chief of Staff',
-          organization: 'Sen. Hansen Office',
-          contact_type: 'Aide',
-          email: 'sarah.johnson@coleg.gov',
-          phone: '(303) 866-4883',
-          office_location: 'Room 200',
-          relationship_strength: 'Strong',
-          notes: 'Very responsive, good gatekeeper',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]);
+      const contactsData = await contactsService.getAll();
+      setContacts(contactsData);
       
+      // Load issue tags (mock for now)
       setIssueTags([
         { id: '1', name: 'Clean Energy', description: 'Renewable energy, solar, wind', color: '#10B981' },
         { id: '2', name: 'Healthcare', description: 'Medical care, insurance', color: '#EF4444' },
@@ -150,550 +93,409 @@ export default function ContactsPage() {
     }
   };
 
-  const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = 
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = typeFilter === 'All' || contact.contact_type === typeFilter;
-    
-    return matchesSearch && matchesType;
-  });
-
   const handleAddContact = async () => {
     try {
-      setActionLoading('add-contact');
-      // TODO: Replace with actual API call
-      const newContactData = {
-        ...newContact,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setContacts(prev => [newContactData, ...prev]);
+      setLoading(true);
+      await contactsService.create(newContact);
       setAddContactOpen(false);
+      setSuccessMessage('Contact added successfully!');
       setNewContact({
         name: '',
         title: '',
         organization: '',
-        contact_type: 'Other',
+        contact_type: 'Stakeholder',
         email: '',
         phone: '',
         office_location: '',
+        relationship_strength: 'Medium',
         notes: '',
-        relationship_strength: 'Unknown'
+        issue_tags: []
       });
-      setSuccessMessage('Contact added successfully!');
-      
+      loadData();
     } catch (error) {
       console.error('Error adding contact:', error);
       setErrorMessage('Failed to add contact');
     } finally {
-      setActionLoading(null);
+      setLoading(false);
     }
   };
 
-  const handleUpdateContact = async () => {
-    if (!selectedContact) return;
+  const handleDeleteContact = async (id: string) => {
+    if (confirm('Are you sure you want to delete this contact?')) {
+      try {
+        await contactsService.delete(id);
+        setSuccessMessage('Contact deleted successfully!');
+        loadData();
+      } catch (error) {
+        console.error('Error deleting contact:', error);
+        setErrorMessage('Failed to delete contact');
+      }
+    }
+  };
+
+  const filteredContacts = contacts.filter(contact => {
+    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = typeFilter === 'all' || contact.contact_type === typeFilter;
+    const matchesRelationship = relationshipFilter === 'all' || contact.relationship_strength === relationshipFilter;
     
-    try {
-      setActionLoading('update-contact');
-      // TODO: Replace with actual API call
-      const updatedContact = {
-        ...selectedContact,
-        updated_at: new Date().toISOString()
-      };
-      
-      setContacts(prev => prev.map(contact => 
-        contact.id === selectedContact.id ? updatedContact : contact
-      ));
-      setEditContactOpen(false);
-      setSelectedContact(null);
-      setSuccessMessage('Contact updated successfully!');
-      
-    } catch (error) {
-      console.error('Error updating contact:', error);
-      setErrorMessage('Failed to update contact');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleDeleteContact = async (contactId: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) return;
-    
-    try {
-      setActionLoading(contactId);
-      // TODO: Replace with actual API call
-      setContacts(prev => prev.filter(contact => contact.id !== contactId));
-      setSuccessMessage('Contact deleted successfully!');
-      
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      setErrorMessage('Failed to delete contact');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const getContactTypeColor = (type: string) => {
-    switch (type) {
-      case 'Legislator': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Aide': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Lobbyist': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Stakeholder': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Staff': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-slate-100 text-slate-800 border-slate-200';
-    }
-  };
+    return matchesSearch && matchesType && matchesRelationship;
+  });
 
   const getRelationshipColor = (strength: string) => {
-    switch (strength) {
-      case 'Strong': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Good': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Neutral': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Weak': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    switch (strength.toLowerCase()) {
+      case 'high': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-orange-100 text-orange-800';
+      case 'none': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-      </div>
-    );
-  }
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'legislator': return 'bg-blue-100 text-blue-800';
+      case 'aide': return 'bg-purple-100 text-purple-800';
+      case 'lobbyist': return 'bg-indigo-100 text-indigo-800';
+      case 'stakeholder': return 'bg-green-100 text-green-800';
+      case 'staff': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const actions = (
+    <div className="flex items-center space-x-2">
+      <Button size="sm" onClick={() => setAddContactOpen(true)}>
+        <Plus className="h-4 w-4 mr-2" />
+        Add Contact
+      </Button>
+    </div>
+  );
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">General Contacts</h1>
-              <p className="text-slate-600 mt-1">Manage legislators, aides, lobbyists, and stakeholders</p>
-            </div>
-            <Dialog open={addContactOpen} onOpenChange={setAddContactOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Contact
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </div>
+    <DashboardLayout
+      title="Contacts"
+      subtitle="Manage your professional network and relationships"
+      actions={actions}
+    >
+      {/* Messages */}
+      {successMessage && (
+        <Alert className="mb-6">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
 
-          {/* Alerts */}
-          {successMessage && (
-            <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-          {errorMessage && (
-            <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          )}
+      {errorMessage && (
+        <Alert className="mb-6" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
+      <Tabs defaultValue="contacts" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="contacts">All Contacts ({contacts.length})</TabsTrigger>
+          <TabsTrigger value="tags">Issue Tags ({issueTags.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="contacts" className="space-y-6">
+          {/* Search and Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search & Filter Contacts</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search contacts..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                  <Input
+                    placeholder="Search contacts..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Contact Type" />
+                    <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All Types</SelectItem>
-                    <SelectItem value="Legislator">Legislators</SelectItem>
-                    <SelectItem value="Aide">Aides</SelectItem>
-                    <SelectItem value="Lobbyist">Lobbyists</SelectItem>
-                    <SelectItem value="Stakeholder">Stakeholders</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="Legislator">Legislator</SelectItem>
+                    <SelectItem value="Aide">Aide</SelectItem>
+                    <SelectItem value="Lobbyist">Lobbyist</SelectItem>
+                    <SelectItem value="Stakeholder">Stakeholder</SelectItem>
                     <SelectItem value="Staff">Staff</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={issueFilter} onValueChange={setIssueFilter}>
+                <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Issue Area" />
+                    <SelectValue placeholder="All Relationships" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All Issues</SelectItem>
-                    {issueTags.map(tag => (
-                      <SelectItem key={tag.id} value={tag.name}>{tag.name}</SelectItem>
-                    ))}
+                    <SelectItem value="all">All Relationships</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="None">None</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
           </Card>
 
-          {/* Contacts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredContacts.map((contact) => (
-              <Card key={contact.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-indigo-100 rounded-lg">
-                        <Users className="h-5 w-5 text-indigo-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{contact.name}</CardTitle>
-                        <p className="text-sm text-slate-600">{contact.title}</p>
+          {/* Contacts List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Contacts ({filteredContacts.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : filteredContacts.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No contacts found. {searchTerm && 'Try adjusting your search terms.'}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredContacts.map((contact) => (
+                    <div key={contact.id} className="border rounded-lg p-4 hover:bg-slate-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold text-lg">{contact.name}</h3>
+                            <Badge className={getTypeColor(contact.contact_type)}>
+                              {contact.contact_type}
+                            </Badge>
+                            <Badge className={getRelationshipColor(contact.relationship_strength)}>
+                              {contact.relationship_strength}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 text-sm text-slate-600">
+                            {contact.title && (
+                              <div className="flex items-center">
+                                <Users className="h-4 w-4 mr-2" />
+                                {contact.title}
+                              </div>
+                            )}
+                            {contact.organization && (
+                              <div className="flex items-center">
+                                <Building2 className="h-4 w-4 mr-2" />
+                                {contact.organization}
+                              </div>
+                            )}
+                            <div className="flex items-center">
+                              <Mail className="h-4 w-4 mr-2" />
+                              {contact.email}
+                            </div>
+                            <div className="flex items-center">
+                              <Phone className="h-4 w-4 mr-2" />
+                              {contact.phone}
+                            </div>
+                            {contact.office_location && (
+                              <div className="flex items-center">
+                                <MapPin className="h-4 w-4 mr-2" />
+                                {contact.office_location}
+                              </div>
+                            )}
+                          </div>
+                          {contact.notes && (
+                            <p className="text-sm text-slate-500 mt-2">{contact.notes}</p>
+                          )}
+                          {contact.issue_tags && contact.issue_tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {contact.issue_tags.map((tag, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedContact(contact)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteContact(contact.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedContact(contact);
-                          setEditContactOpen(true);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteContact(contact.id)}
-                        disabled={actionLoading === contact.id}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        {actionLoading === contact.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getContactTypeColor(contact.contact_type)}>
-                      {contact.contact_type}
-                    </Badge>
-                    <Badge className={getRelationshipColor(contact.relationship_strength)}>
-                      {contact.relationship_strength}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    {contact.organization && (
-                      <div className="flex items-center space-x-2">
-                        <Building2 className="h-4 w-4 text-slate-400" />
-                        <span>{contact.organization}</span>
-                      </div>
-                    )}
-                    {contact.email && (
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4 text-slate-400" />
-                        <span className="truncate">{contact.email}</span>
-                      </div>
-                    )}
-                    {contact.phone && (
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-slate-400" />
-                        <span>{contact.phone}</span>
-                      </div>
-                    )}
-                    {contact.office_location && (
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-slate-400" />
-                        <span>{contact.office_location}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {contact.notes && (
-                    <div className="pt-2 border-t border-slate-200">
-                      <p className="text-sm text-slate-600 line-clamp-2">{contact.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="pt-2 border-t border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-500">
-                        {contact.last_contact_date ? 
-                          `Last contact: ${new Date(contact.last_contact_date).toLocaleDateString()}` :
-                          'No recent contact'
-                        }
-                      </span>
-                      <Button variant="outline" size="sm">
-                        <Tag className="h-3 w-3 mr-1" />
-                        Tag Issues
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Add Contact Modal */}
-          <Dialog open={addContactOpen} onOpenChange={setAddContactOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Contact</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="contact_name">Name *</Label>
-                  <Input
-                    id="contact_name"
-                    value={newContact.name}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., John Smith"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={newContact.title}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g., Chief of Staff"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="organization">Organization</Label>
-                  <Input
-                    id="organization"
-                    value={newContact.organization}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, organization: e.target.value }))}
-                    placeholder="e.g., Colorado Senate"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="contact_type">Contact Type</Label>
-                  <Select value={newContact.contact_type} onValueChange={(value: any) => setNewContact(prev => ({ ...prev, contact_type: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Legislator">Legislator</SelectItem>
-                      <SelectItem value="Aide">Aide</SelectItem>
-                      <SelectItem value="Lobbyist">Lobbyist</SelectItem>
-                      <SelectItem value="Stakeholder">Stakeholder</SelectItem>
-                      <SelectItem value="Staff">Staff</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newContact.email}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="contact@example.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={newContact.phone}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="(303) 555-0101"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="office_location">Office Location</Label>
-                  <Input
-                    id="office_location"
-                    value={newContact.office_location}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, office_location: e.target.value }))}
-                    placeholder="Room 200"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="relationship_strength">Relationship Strength</Label>
-                  <Select value={newContact.relationship_strength} onValueChange={(value: any) => setNewContact(prev => ({ ...prev, relationship_strength: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Unknown">Unknown</SelectItem>
-                      <SelectItem value="Weak">Weak</SelectItem>
-                      <SelectItem value="Neutral">Neutral</SelectItem>
-                      <SelectItem value="Good">Good</SelectItem>
-                      <SelectItem value="Strong">Strong</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={newContact.notes}
-                    onChange={(e) => setNewContact(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Additional notes about this contact..."
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2 mt-6">
-                <Button variant="outline" onClick={() => setAddContactOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddContact}
-                  disabled={!newContact.name || actionLoading === 'add-contact'}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  {actionLoading === 'add-contact' ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Add Contact
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Edit Contact Modal */}
-          <Dialog open={editContactOpen} onOpenChange={setEditContactOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Edit Contact</DialogTitle>
-              </DialogHeader>
-              {selectedContact && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit_name">Name *</Label>
-                    <Input
-                      id="edit_name"
-                      value={selectedContact.name}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, name: e.target.value } : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_title">Title</Label>
-                    <Input
-                      id="edit_title"
-                      value={selectedContact.title || ''}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, title: e.target.value } : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_organization">Organization</Label>
-                    <Input
-                      id="edit_organization"
-                      value={selectedContact.organization || ''}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, organization: e.target.value } : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_contact_type">Contact Type</Label>
-                    <Select value={selectedContact.contact_type} onValueChange={(value: any) => setSelectedContact(prev => prev ? { ...prev, contact_type: value } : null)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Legislator">Legislator</SelectItem>
-                        <SelectItem value="Aide">Aide</SelectItem>
-                        <SelectItem value="Lobbyist">Lobbyist</SelectItem>
-                        <SelectItem value="Stakeholder">Stakeholder</SelectItem>
-                        <SelectItem value="Staff">Staff</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_email">Email</Label>
-                    <Input
-                      id="edit_email"
-                      type="email"
-                      value={selectedContact.email || ''}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, email: e.target.value } : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_phone">Phone</Label>
-                    <Input
-                      id="edit_phone"
-                      value={selectedContact.phone || ''}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, phone: e.target.value } : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_office_location">Office Location</Label>
-                    <Input
-                      id="edit_office_location"
-                      value={selectedContact.office_location || ''}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, office_location: e.target.value } : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_relationship_strength">Relationship Strength</Label>
-                    <Select value={selectedContact.relationship_strength} onValueChange={(value: any) => setSelectedContact(prev => prev ? { ...prev, relationship_strength: value } : null)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Unknown">Unknown</SelectItem>
-                        <SelectItem value="Weak">Weak</SelectItem>
-                        <SelectItem value="Neutral">Neutral</SelectItem>
-                        <SelectItem value="Good">Good</SelectItem>
-                        <SelectItem value="Strong">Strong</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="edit_notes">Notes</Label>
-                    <Textarea
-                      id="edit_notes"
-                      value={selectedContact.notes || ''}
-                      onChange={(e) => setSelectedContact(prev => prev ? { ...prev, notes: e.target.value } : null)}
-                      rows={3}
-                    />
-                  </div>
+                  ))}
                 </div>
               )}
-              <div className="flex justify-end space-x-2 mt-6">
-                <Button variant="outline" onClick={() => setEditContactOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleUpdateContact}
-                  disabled={!selectedContact?.name || actionLoading === 'update-contact'}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  {actionLoading === 'update-contact' ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Edit className="h-4 w-4 mr-2" />
-                  )}
-                  Update Contact
-                </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tags" className="space-y-6">
+          {/* Issue Tags Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Issue Tags</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {issueTags.map((tag) => (
+                  <div key={tag.id} className="border rounded-lg p-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      <h3 className="font-semibold">{tag.name}</h3>
+                    </div>
+                    <p className="text-sm text-slate-600">{tag.description}</p>
+                  </div>
+                ))}
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-    </ProtectedRoute>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Add Contact Modal */}
+      <Dialog open={addContactOpen} onOpenChange={setAddContactOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Contact</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={newContact.name}
+                  onChange={(e) => setNewContact({...newContact, name: e.target.value})}
+                  placeholder="Enter contact name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={newContact.title}
+                  onChange={(e) => setNewContact({...newContact, title: e.target.value})}
+                  placeholder="Enter title"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="organization">Organization</Label>
+                <Input
+                  id="organization"
+                  value={newContact.organization}
+                  onChange={(e) => setNewContact({...newContact, organization: e.target.value})}
+                  placeholder="Enter organization"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contact_type">Type</Label>
+                <Select value={newContact.contact_type} onValueChange={(value: any) => setNewContact({...newContact, contact_type: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Legislator">Legislator</SelectItem>
+                    <SelectItem value="Aide">Aide</SelectItem>
+                    <SelectItem value="Lobbyist">Lobbyist</SelectItem>
+                    <SelectItem value="Stakeholder">Stakeholder</SelectItem>
+                    <SelectItem value="Staff">Staff</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newContact.email}
+                  onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+                  placeholder="Enter email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={newContact.phone}
+                  onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+                  placeholder="Enter phone"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="office_location">Office Location</Label>
+              <Input
+                id="office_location"
+                value={newContact.office_location}
+                onChange={(e) => setNewContact({...newContact, office_location: e.target.value})}
+                placeholder="Enter office location"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="relationship_strength">Relationship Strength</Label>
+              <Select value={newContact.relationship_strength} onValueChange={(value: any) => setNewContact({...newContact, relationship_strength: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="None">None</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={newContact.notes}
+                onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
+                placeholder="Enter notes"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setAddContactOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddContact} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+                )}
+                Add Contact
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </DashboardLayout>
   );
 }
