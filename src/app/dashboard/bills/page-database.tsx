@@ -26,7 +26,6 @@ import {
   Loader2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { billsService } from "@/lib/database";
 import type { Bill } from "@/lib/supabase";
 
@@ -233,8 +232,7 @@ export default function BillsPage() {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white z-50">
         <div className="flex flex-col h-full">
@@ -704,7 +702,6 @@ export default function BillsPage() {
           )}
         </DialogContent>
       </Dialog>
-      </div>
-    </ProtectedRoute>
+    </div>
   );
 }

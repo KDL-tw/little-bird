@@ -5,8 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { 
   BarChart3, 
   FileText, 
@@ -26,10 +30,16 @@ import {
   Brain,
   BarChart,
   Code,
-  Mail
+  Mail,
+  RefreshCw,
+  Database,
+  LogOut,
+  User,
+  CreditCard
 } from "lucide-react";
 
 export default function Dashboard() {
+  const { user, signOut } = useAuth();
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [isEarlyAccessModalOpen, setIsEarlyAccessModalOpen] = useState(false);
   const [email, setEmail] = useState('');
@@ -41,8 +51,17 @@ export default function Dashboard() {
     setIsEarlyAccessModalOpen(false);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const getUserInitials = (email: string) => {
+    return email.split('@')[0].substring(0, 2).toUpperCase();
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-slate-50">
       {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white z-50">
         <div className="flex flex-col h-full">
@@ -68,6 +87,18 @@ export default function Dashboard() {
               <Users className="w-5 h-5 mr-3" />
               Legislators
             </Link>
+            <Link href="/dashboard/alerts" className="flex items-center px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+              <Bell className="w-5 h-5 mr-3" />
+              Alerts
+            </Link>
+                    <Link href="/dashboard/sync" className="flex items-center px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                      <RefreshCw className="w-5 h-5 mr-3" />
+                      Data Sync
+                    </Link>
+                    <Link href="/dashboard/sources" className="flex items-center px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                      <Database className="w-5 h-5 mr-3" />
+                      Data Sources
+                    </Link>
             <Link href="/dashboard/compliance" className="flex items-center px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
               <Shield className="w-5 h-5 mr-3" />
               Compliance
@@ -104,6 +135,47 @@ export default function Dashboard() {
               <p className="text-slate-600">Here&apos;s what&apos;s happening with your lobbying operations today.</p>
             </div>
             <div className="flex items-center space-x-4">
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.email} />
+                      <AvatarFallback className="bg-indigo-600 text-white text-sm">
+                        {user?.email ? getUserInitials(user.email) : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium">{user?.user_metadata?.name || user?.email}</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/settings" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/billing" className="flex items-center">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Billing</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Dialog open={isPlatformModalOpen} onOpenChange={setIsPlatformModalOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="flex items-center space-x-2">
@@ -338,9 +410,6 @@ export default function Dashboard() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">JD</span>
-              </div>
             </div>
           </div>
         </header>
@@ -538,6 +607,7 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
