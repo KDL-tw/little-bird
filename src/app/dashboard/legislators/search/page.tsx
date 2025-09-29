@@ -52,22 +52,24 @@ export default function SearchLegislatorsPage() {
     setError('');
     
     try {
-      const response = await fetch('/api/openstates/legislators');
+      // Use offline data API (no database required)
+      let url = '/api/offline-data?type=legislators';
+      
+      if (searchTerm.trim()) {
+        url += `&q=${encodeURIComponent(searchTerm.trim())}`;
+      }
+      
+      console.log('Offline legislators search URL:', url);
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch legislators');
       }
       
       const data = await response.json();
-      let legislators = data.results || [];
+      let legislators = data.data || [];
       
-      // Filter by search term
-      legislators = legislators.filter((leg: OpenStatesLegislator) => 
-        leg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        leg.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (leg.committees || []).some((committee: string) => 
-          committee.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
+      // Search filtering is now handled by the API
       
       // Filter by chamber
       if (chamberFilter !== 'all') {
