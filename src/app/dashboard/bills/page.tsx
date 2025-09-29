@@ -320,121 +320,121 @@ export default function BillsPage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Bill</DialogTitle>
-                </DialogHeader>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="bill_number">Bill Number</Label>
-                    <Input
-                      id="bill_number"
-                      value={newBill.bill_number}
-                      onChange={(e) => setNewBill(prev => ({ ...prev, bill_number: e.target.value }))}
-                      placeholder="e.g., HB24-1001"
-                    />
+                  <DialogHeader>
+                    <DialogTitle>Add New Bill</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bill_number">Bill Number</Label>
+                      <Input
+                        id="bill_number"
+                        value={newBill.bill_number}
+                        onChange={(e) => setNewBill(prev => ({ ...prev, bill_number: e.target.value }))}
+                        placeholder="e.g., HB24-1001"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sponsor">Sponsor</Label>
+                      <Input
+                        id="sponsor"
+                        value={newBill.sponsor}
+                        onChange={(e) => setNewBill(prev => ({ ...prev, sponsor: e.target.value }))}
+                        placeholder="e.g., Rep. John Doe"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={newBill.title}
+                        onChange={(e) => setNewBill(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Bill title"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={newBill.status} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, status: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Passed">Passed</SelectItem>
+                          <SelectItem value="Failed">Failed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="position">Position</Label>
+                      <Select value={newBill.position} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, position: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="None">None</SelectItem>
+                          <SelectItem value="Support">Support</SelectItem>
+                          <SelectItem value="Monitor">Monitor</SelectItem>
+                          <SelectItem value="Oppose">Oppose</SelectItem>
+                          <SelectItem value="Hypothetical">Hypothetical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="priority">Priority</Label>
+                      <Select value={newBill.priority} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, priority: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="None">None</SelectItem>
+                          <SelectItem value="Low">Low</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="client">Client</Label>
+                      <Select value={newBill.client_id} onValueChange={(value) => setNewBill(prev => ({ ...prev, client_id: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select client" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No client</SelectItem>
+                          {clients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="last_action">Last Action</Label>
+                      <Input
+                        id="last_action"
+                        value={newBill.last_action}
+                        onChange={(e) => setNewBill(prev => ({ ...prev, last_action: e.target.value }))}
+                        placeholder="e.g., Passed House Committee"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="sponsor">Sponsor</Label>
-                    <Input
-                      id="sponsor"
-                      value={newBill.sponsor}
-                      onChange={(e) => setNewBill(prev => ({ ...prev, sponsor: e.target.value }))}
-                      placeholder="e.g., Rep. John Doe"
-                    />
+                  <div className="flex justify-end space-x-2 mt-6">
+                    <Button variant="outline" onClick={() => setAddBillOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleAddBill}
+                      disabled={!newBill.bill_number || !newBill.title || actionLoading === 'add-bill'}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {actionLoading === 'add-bill' ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4 mr-2" />
+                      )}
+                      Add Bill
+                    </Button>
                   </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      value={newBill.title}
-                      onChange={(e) => setNewBill(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Bill title"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={newBill.status} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, status: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Passed">Passed</SelectItem>
-                        <SelectItem value="Failed">Failed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="position">Position</Label>
-                    <Select value={newBill.position} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, position: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Support">Support</SelectItem>
-                        <SelectItem value="Monitor">Monitor</SelectItem>
-                        <SelectItem value="Oppose">Oppose</SelectItem>
-                        <SelectItem value="Hypothetical">Hypothetical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="priority">Priority</Label>
-                    <Select value={newBill.priority} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, priority: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="High">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="client">Client</Label>
-                    <Select value={newBill.client_id} onValueChange={(value) => setNewBill(prev => ({ ...prev, client_id: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">No client</SelectItem>
-                        {clients.map(client => (
-                          <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="last_action">Last Action</Label>
-                    <Input
-                      id="last_action"
-                      value={newBill.last_action}
-                      onChange={(e) => setNewBill(prev => ({ ...prev, last_action: e.target.value }))}
-                      placeholder="e.g., Passed House Committee"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" onClick={() => setAddBillOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleAddBill}
-                    disabled={!newBill.bill_number || !newBill.title || actionLoading === 'add-bill'}
-                    className="bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    {actionLoading === 'add-bill' ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Plus className="h-4 w-4 mr-2" />
-                    )}
-                    Add Bill
-                  </Button>
-                </div>
-              </DialogContent>
+                </DialogContent>
               </Dialog>
             </div>
 
