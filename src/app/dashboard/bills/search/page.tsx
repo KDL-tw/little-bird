@@ -90,20 +90,14 @@ export default function BillSearchPage() {
       setErrorMessage(null);
       setSearchResults([]);
       
-      // Use our internal search API instead of OpenStates
-      let url = '/api/search/bills';
-      const params = new URLSearchParams();
+      // Use offline data API (no database required)
+      let url = '/api/offline-data?type=bills';
       
       if (searchTerm.trim()) {
-        params.append('q', searchTerm.trim());
-      }
-      params.append('limit', '20');
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
+        url += `&q=${encodeURIComponent(searchTerm.trim())}`;
       }
       
-      console.log('Internal search URL:', url);
+      console.log('Offline search URL:', url);
       
       const response = await fetch(url);
       
@@ -112,7 +106,7 @@ export default function BillSearchPage() {
       }
       
       const data = await response.json();
-      console.log('Internal search response:', data);
+      console.log('Offline search response:', data);
       
       if (data.success && data.data && Array.isArray(data.data)) {
         setSearchResults(data.data);
