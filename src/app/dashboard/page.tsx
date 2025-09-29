@@ -15,8 +15,6 @@ import {
   TrendingUp, 
   Settings,
   Home,
-  ChevronRight,
-  Clock,
   AlertCircle,
   CheckCircle,
   Calendar,
@@ -103,7 +101,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-              <p className="text-slate-600">Here's what's happening with your lobbying operations today.</p>
+              <p className="text-slate-600">Here&apos;s what&apos;s happening with your lobbying operations today.</p>
             </div>
             <div className="flex items-center space-x-4">
               <Dialog open={isPlatformModalOpen} onOpenChange={setIsPlatformModalOpen}>
