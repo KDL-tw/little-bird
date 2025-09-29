@@ -135,9 +135,9 @@ export default function BillSearchPage() {
       const billData = {
         bill_number: selectedBill.identifier || 'Unknown',
         title: selectedBill.title || 'Unknown Title',
-        sponsor: selectedBill.sponsors?.[0]?.name || 'Unknown',
+        sponsor: 'Unknown', // Will be populated when we get sponsors separately
         status: 'Active' as 'Active' | 'Passed' | 'Failed',
-        last_action: selectedBill.actions?.[0]?.description || selectedBill.latest_action_description || 'Introduced',
+        last_action: selectedBill.latest_action_description || 'Introduced',
         position: newBill.position,
         priority: newBill.priority,
         client_id: newBill.client_id || undefined,
@@ -367,7 +367,7 @@ export default function BillSearchPage() {
                     <h3 className="font-semibold">{selectedBill.identifier || 'Unknown'}</h3>
                     <p className="text-sm text-slate-600">{selectedBill.title || 'Unknown Title'}</p>
                     <p className="text-sm text-slate-500 mt-1">
-                      Sponsor: {selectedBill.sponsors?.[0]?.name || 'Unknown'}
+                      Status: {selectedBill.latest_action_description || 'Unknown'}
                     </p>
                   </div>
                   
