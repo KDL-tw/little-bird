@@ -85,14 +85,21 @@ export default function BillSearchPage() {
   };
 
   const searchBills = async () => {
-    // Allow empty search to get recent bills
-    const query = searchTerm.trim() || 'recent';
-    
     try {
       setLoading(true);
       setErrorMessage(null);
       
-      const response = await fetch(`/api/openstates/bills?q=${encodeURIComponent(query)}&state=co&session=2024`);
+      // Build URL exactly like the working test
+      let url = '/api/openstates/bills?state=co';
+      
+      // Only add query if there's actually a search term
+      if (searchTerm.trim()) {
+        url += `&q=${encodeURIComponent(searchTerm.trim())}`;
+      }
+      
+      console.log('Search URL:', url);
+      
+      const response = await fetch(url);
       const data = await response.json();
       
       console.log('Search response:', data);
