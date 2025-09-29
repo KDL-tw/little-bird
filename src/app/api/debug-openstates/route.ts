@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     const apiKey = '7fffc14f-6f2d-4168-ac04-628867cec6b1';
     
     // Test the API with v3 endpoint (using state abbreviation and header auth)
-    const testUrl = `https://v3.openstates.org/bills?jurisdiction=CO&per_page=3`;
+    const testUrl = `https://v3.openstates.org/bills?jurisdiction=CO&per_page=5`;
     
     console.log('Testing OpenStates API:', testUrl);
     

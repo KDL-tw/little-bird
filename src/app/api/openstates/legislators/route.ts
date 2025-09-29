@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q');
 
     // Build OpenStates API URL (using official v3 endpoint)
-    let url = `https://v3.openstates.org/people?per_page=100`;
+    let url = `https://v3.openstates.org/people?per_page=20`;
     
     // Add jurisdiction (state) - required parameter (use state abbreviation)
     if (state) {
