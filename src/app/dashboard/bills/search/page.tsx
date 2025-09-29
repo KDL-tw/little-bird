@@ -10,43 +10,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { 
-  Search, 
-  Plus, 
-  ExternalLink, 
-  Calendar,
-  User,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  ArrowLeft
-} from 'lucide-react';
+import { Search, Plus, ArrowLeft, Loader2, CheckCircle, AlertCircle, FileText, Calendar, User, Building2 } from 'lucide-react';
+import { billsService, clientsService } from '@/lib/database';
 import Link from 'next/link';
+import type { Bill, Client } from '@/lib/supabase';
 
-interface Bill {
+interface OpenStatesBill {
   id: string;
-  bill_number: string;
+  identifier: string;
   title: string;
-  sponsor: string;
-  status: string;
-  last_action: string;
-  position: string;
-  priority: string;
-  watchlist: boolean;
-  created_at: string;
-  updated_at: string;
+  latest_action_description: string;
+  session: string;
+  jurisdiction: {
+    name: string;
+  };
+  from_organization: {
+    name: string;
+  };
 }
 
 export default function BillsSearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchResults, setSearchResults] = useState<Bill[]>([]);
+  const [searchResults, setSearchResults] = useState<OpenStatesBill[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [selectedBill, setSelectedBill] = useState<OpenStatesBill | null>(null);
   const [addBillOpen, setAddBillOpen] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
   const [newBill, setNewBill] = useState({
     position: 'None' as 'Support' | 'Monitor' | 'Oppose' | 'None' | 'Hypothetical',
     priority: 'None' as 'High' | 'Medium' | 'Low' | 'None',
@@ -54,29 +45,46 @@ export default function BillsSearchPage() {
     watchlist: false
   });
 
+  // Load clients on component mount
+  useState(() => {
+    loadClients();
+  });
+
+  const loadClients = async () => {
+    try {
+      const data = await clientsService.getAll();
+      setClients(data);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
   const searchBills = async () => {
     try {
       setLoading(true);
       setErrorMessage(null);
       setSearchResults([]);
       
-      // Use offline data API (no database required)
-      let url = '/api/offline-data?type=bills';
+      // Build URL exactly like our working simple search
+      let url = '/api/openstates/bills?state=co';
       
+      // Only add query if there's actually a search term
       if (searchTerm.trim()) {
         url += `&q=${encodeURIComponent(searchTerm.trim())}`;
       }
       
-      console.log('Offline search URL:', url);
+      console.log('Search URL:', url);
       
       const response = await fetch(url);
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('Offline search response:', data);
+      console.log('Search response:', data);
       
       if (data.success && data.data && Array.isArray(data.data)) {
         setSearchResults(data.data);
@@ -100,30 +108,27 @@ export default function BillsSearchPage() {
     try {
       setLoading(true);
       
-      // Convert OpenStates bill to our format with safe property access
+      // Convert OpenStates bill to our format
       const billData = {
-        bill_number: selectedBill.bill_number || 'Unknown',
-        title: selectedBill.title || 'Unknown Title',
-        sponsor: selectedBill.sponsor || 'Unknown',
+        bill_number: selectedBill.identifier,
+        title: selectedBill.title,
+        sponsor: selectedBill.from_organization?.name || 'Unknown',
         status: 'Active' as 'Active' | 'Passed' | 'Failed',
-        last_action: selectedBill.last_action || 'Introduced',
+        last_action: selectedBill.latest_action_description || 'Introduced',
         position: newBill.position,
         priority: newBill.priority,
         client_id: newBill.client_id || undefined,
-        watchlist: newBill.watchlist
+        watchlist: newBill.watchlist,
+        openstates_id: selectedBill.id,
+        openstates_data: selectedBill
       };
       
-      // For now, just show success message
+      await billsService.create(billData);
       setAddBillOpen(false);
-      setSuccessMessage(`Bill ${selectedBill.bill_number} added to tracking!`);
+      setSuccessMessage(`Bill ${selectedBill.identifier} added to tracking!`);
       
       // Reset form
       setNewBill({
-        bill_number: '',
-        title: '',
-        sponsor: '',
-        status: 'Active',
-        last_action: '',
         position: 'None',
         priority: 'None',
         client_id: '',
@@ -132,7 +137,7 @@ export default function BillsSearchPage() {
       
     } catch (error) {
       console.error('Error adding bill:', error);
-      setErrorMessage('Failed to add bill');
+      setErrorMessage('Failed to add bill to tracking');
     } finally {
       setLoading(false);
     }
@@ -196,17 +201,6 @@ export default function BillsSearchPage() {
                 onKeyPress={(e) => e.key === 'Enter' && searchBills()}
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="passed">Passed</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
             <Button onClick={searchBills} disabled={loading}>
               {loading ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -250,28 +244,27 @@ export default function BillsSearchPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="font-semibold text-lg">{bill.bill_number}</h3>
-                        <Badge className={getStatusColor(bill.status)}>
-                          {bill.status}
+                        <h3 className="font-semibold text-lg">{bill.identifier}</h3>
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Active
                         </Badge>
-                        {bill.priority !== 'None' && (
-                          <Badge className={getPriorityColor(bill.priority)}>
-                            {bill.priority} Priority
-                          </Badge>
-                        )}
-                        {bill.watchlist && (
-                          <Badge variant="outline">Watchlist</Badge>
-                        )}
+                        <Badge variant="outline">
+                          {bill.session}
+                        </Badge>
                       </div>
                       <p className="text-slate-600 mb-2">{bill.title}</p>
                       <div className="flex items-center space-x-4 text-sm text-slate-500">
                         <span className="flex items-center">
                           <User className="h-4 w-4 mr-1" />
-                          {bill.sponsor}
+                          {bill.from_organization?.name || 'Unknown Sponsor'}
                         </span>
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {bill.last_action}
+                          {bill.latest_action_description || 'Introduced'}
+                        </span>
+                        <span className="flex items-center">
+                          <Building2 className="h-4 w-4 mr-1" />
+                          {bill.jurisdiction?.name || 'Colorado'}
                         </span>
                       </div>
                     </div>
@@ -305,10 +298,13 @@ export default function BillsSearchPage() {
           {selectedBill && (
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-lg">
-                <h3 className="font-semibold">{selectedBill.bill_number}</h3>
+                <h3 className="font-semibold">{selectedBill.identifier}</h3>
                 <p className="text-sm text-slate-600">{selectedBill.title}</p>
                 <p className="text-sm text-slate-500 mt-1">
-                  Status: {selectedBill.last_action}
+                  Sponsor: {selectedBill.from_organization?.name || 'Unknown'}
+                </p>
+                <p className="text-sm text-slate-500">
+                  Last Action: {selectedBill.latest_action_description || 'Introduced'}
                 </p>
               </div>
               
@@ -343,6 +339,34 @@ export default function BillsSearchPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="client_id">Client (Optional)</Label>
+                <Select value={newBill.client_id} onValueChange={(value) => setNewBill({...newBill, client_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No client</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="watchlist"
+                  checked={newBill.watchlist}
+                  onChange={(e) => setNewBill({...newBill, watchlist: e.target.checked})}
+                  className="rounded"
+                />
+                <Label htmlFor="watchlist">Add to watchlist</Label>
               </div>
               
               <div className="flex justify-end space-x-2">

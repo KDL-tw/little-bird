@@ -46,20 +46,18 @@ export default function LegislatorsSearchPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const searchLegislators = async () => {
-    if (!searchTerm.trim()) return;
-    
     setLoading(true);
     setError('');
     
     try {
-      // Use offline data API (no database required)
-      let url = '/api/offline-data?type=legislators';
+      // Use OpenStates API directly like the working bills search
+      let url = '/api/openstates/legislators?state=co';
       
       if (searchTerm.trim()) {
         url += `&q=${encodeURIComponent(searchTerm.trim())}`;
       }
       
-      console.log('Offline legislators search URL:', url);
+      console.log('Legislators search URL:', url);
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -68,8 +66,6 @@ export default function LegislatorsSearchPage() {
       
       const data = await response.json();
       let legislators = data.data || [];
-      
-      // Search filtering is now handled by the API
       
       // Filter by chamber
       if (chamberFilter !== 'all') {
