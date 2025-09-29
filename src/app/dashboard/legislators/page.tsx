@@ -252,6 +252,12 @@ export default function LegislatorsCRM() {
               <p className="text-slate-600">Manage relationships with Colorado legislators.</p>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/dashboard/legislators/crm">
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Advanced CRM
+                </Button>
+              </Link>
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
