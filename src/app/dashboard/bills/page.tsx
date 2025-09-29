@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2, Users } from 'lucide-react';
+import { DashboardLayout } from '@/components/DashboardLayout';
+import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2, Users, ArrowRight } from 'lucide-react';
 import { billsService, clientsService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -27,395 +28,419 @@ export default function BillsPage() {
     bill_number: '',
     title: '',
     sponsor: '',
-    status: 'Active',
-    position: 'None',
-    priority: 'None',
+    status: 'Active' as 'Active' | 'Passed' | 'Failed',
+    last_action: '',
+    position: 'None' as 'Support' | 'Monitor' | 'Oppose' | 'None' | 'Hypothetical',
+    priority: 'None' as 'High' | 'Medium' | 'Low' | 'None',
     client_id: '',
-    last_action: ''
+    watchlist: false
   });
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
+    loadBills();
+    loadClients();
   }, []);
 
-  const loadData = async () => {
+  const loadBills = async () => {
     try {
-      const [billsData, clientsData] = await Promise.all([
-        billsService.getAll(),
-        clientsService.getAll()
-      ]);
-      setBills(billsData);
-      setClients(clientsData);
+      setLoading(true);
+      const data = await billsService.getAll();
+      setBills(data);
     } catch (error) {
-      console.error('Error loading data:', error);
-      setErrorMessage('Failed to load data');
+      console.error('Error loading bills:', error);
+      setErrorMessage('Failed to load bills');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadClients = async () => {
+    try {
+      const data = await clientsService.getAll();
+      setClients(data);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
   const handleAddBill = async () => {
     try {
-      setActionLoading('add-bill');
-      const bill = await billsService.create(newBill);
-      setBills(prev => [bill, ...prev]);
+      setLoading(true);
+      await billsService.create(newBill);
+      setAddBillOpen(false);
+      setSuccessMessage('Bill added successfully!');
       setNewBill({
         bill_number: '',
         title: '',
         sponsor: '',
         status: 'Active',
+        last_action: '',
         position: 'None',
         priority: 'None',
         client_id: '',
-        last_action: ''
+        watchlist: false
       });
-      setAddBillOpen(false);
-      setSuccessMessage('Bill added successfully!');
+      loadBills();
     } catch (error) {
       console.error('Error adding bill:', error);
       setErrorMessage('Failed to add bill');
     } finally {
-      setActionLoading(null);
+      setLoading(false);
     }
   };
 
-  const handleExtractSponsors = async (bill: Bill) => {
+  const handleDeleteBill = async (id: string) => {
+    if (confirm('Are you sure you want to delete this bill?')) {
+      try {
+        await billsService.delete(id);
+        setSuccessMessage('Bill deleted successfully!');
+        loadBills();
+      } catch (error) {
+        console.error('Error deleting bill:', error);
+        setErrorMessage('Failed to delete bill');
+      }
+    }
+  };
+
+  const handleToggleWatchlist = async (id: string, currentWatchlist: boolean) => {
     try {
-      setActionLoading(bill.id);
-      
-      // First, get the bill sponsors from OpenStates
-      const response = await fetch(`/api/openstates/bill-sponsors?bill_id=${bill.id}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch bill sponsors');
-      }
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-      
-      // Add sponsors to legislator database
-      const addResponse = await fetch('/api/legislators/add-from-bill', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ billId: bill.id }),
-      });
-      
-      if (!addResponse.ok) {
-        throw new Error('Failed to add sponsors to database');
-      }
-      
-      const addData = await addResponse.json();
-      
-      if (addData.success) {
-        setSuccessMessage(
-          `Extracted ${addData.addedCount} new legislators from ${bill.bill_number}. ` +
-          `${addData.skippedCount} were already in the database.`
-        );
-      } else {
-        throw new Error(addData.error);
-      }
-      
+      await billsService.toggleWatchlist(id, !currentWatchlist);
+      setSuccessMessage(`Bill ${!currentWatchlist ? 'added to' : 'removed from'} watchlist!`);
+      loadBills();
     } catch (error) {
-      console.error('Error extracting sponsors:', error);
-      setErrorMessage('Failed to extract sponsors from bill');
-    } finally {
-      setActionLoading(null);
+      console.error('Error toggling watchlist:', error);
+      setErrorMessage('Failed to update watchlist');
     }
   };
 
-  const filteredBills = bills.filter(bill => {
-    const matchesSearch = bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bill.sponsor.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800 border-red-200';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  const handleUpdatePriority = async (id: string, priority: string) => {
+    try {
+      await billsService.updatePriority(id, priority as 'High' | 'Medium' | 'Low' | 'None');
+      setSuccessMessage('Priority updated successfully!');
+      loadBills();
+    } catch (error) {
+      console.error('Error updating priority:', error);
+      setErrorMessage('Failed to update priority');
     }
   };
+
+  const filteredBills = bills.filter(bill =>
+    bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bill.sponsor.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Passed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Failed': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    switch (status.toLowerCase()) {
+      case 'active': return 'bg-blue-100 text-blue-800';
+      case 'passed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-      </div>
-    );
-  }
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPositionColor = (position: string) => {
+    switch (position.toLowerCase()) {
+      case 'support': return 'bg-green-100 text-green-800';
+      case 'oppose': return 'bg-red-100 text-red-800';
+      case 'monitor': return 'bg-blue-100 text-blue-800';
+      case 'hypothetical': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const actions = (
+    <div className="flex items-center space-x-2">
+      <Link href="/dashboard/bills/search">
+        <Button variant="outline" size="sm">
+          <Search className="h-4 w-4 mr-2" />
+          Search Bills
+        </Button>
+      </Link>
+      <Button size="sm" onClick={() => setAddBillOpen(true)}>
+        <Plus className="h-4 w-4 mr-2" />
+        Add Bill
+      </Button>
+    </div>
+  );
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Bills</h1>
-              <p className="text-slate-600 mt-1">Track and manage legislative bills</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Link href="/dashboard/bills/search">
-                <Button variant="outline">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search Bills
-                </Button>
-              </Link>
-              <Dialog open={addBillOpen} onOpenChange={setAddBillOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Bill
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Add New Bill</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="bill_number">Bill Number</Label>
-                      <Input
-                        id="bill_number"
-                        value={newBill.bill_number}
-                        onChange={(e) => setNewBill(prev => ({ ...prev, bill_number: e.target.value }))}
-                        placeholder="e.g., HB24-1001"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sponsor">Sponsor</Label>
-                      <Input
-                        id="sponsor"
-                        value={newBill.sponsor}
-                        onChange={(e) => setNewBill(prev => ({ ...prev, sponsor: e.target.value }))}
-                        placeholder="e.g., Rep. John Doe"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="title">Title</Label>
-                      <Input
-                        id="title"
-                        value={newBill.title}
-                        onChange={(e) => setNewBill(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Bill title"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="status">Status</Label>
-                      <Select value={newBill.status} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, status: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Passed">Passed</SelectItem>
-                          <SelectItem value="Failed">Failed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="position">Position</Label>
-                      <Select value={newBill.position} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, position: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="None">None</SelectItem>
-                          <SelectItem value="Support">Support</SelectItem>
-                          <SelectItem value="Monitor">Monitor</SelectItem>
-                          <SelectItem value="Oppose">Oppose</SelectItem>
-                          <SelectItem value="Hypothetical">Hypothetical</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select value={newBill.priority} onValueChange={(value: any) => setNewBill(prev => ({ ...prev, priority: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="None">None</SelectItem>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="Medium">Medium</SelectItem>
-                          <SelectItem value="High">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="client">Client</Label>
-                      <Select value={newBill.client_id} onValueChange={(value) => setNewBill(prev => ({ ...prev, client_id: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select client" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">No client</SelectItem>
-                          {clients.map(client => (
-                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="last_action">Last Action</Label>
-                      <Input
-                        id="last_action"
-                        value={newBill.last_action}
-                        onChange={(e) => setNewBill(prev => ({ ...prev, last_action: e.target.value }))}
-                        placeholder="e.g., Passed House Committee"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-2 mt-6">
-                    <Button variant="outline" onClick={() => setAddBillOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleAddBill}
-                      disabled={!newBill.bill_number || !newBill.title || actionLoading === 'add-bill'}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {actionLoading === 'add-bill' ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      Add Bill
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
+    <DashboardLayout
+      title="Bills"
+      subtitle="Track and manage Colorado legislative bills"
+      actions={actions}
+    >
+      {/* Messages */}
+      {successMessage && (
+        <Alert className="mb-6">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
 
-          {successMessage && (
-            <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-          {errorMessage && (
-            <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          )}
+      {errorMessage && (
+        <Alert className="mb-6" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
 
-          <Card className="mb-6">
-            <CardContent className="p-6">
+      {/* Search and Filters */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Search Bills</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="flex-1">
               <Input
-                placeholder="Search bills..."
+                placeholder="Search by bill number, title, or sponsor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Bills ({filteredBills.length})</span>
-                <div className="flex items-center text-sm text-slate-500">
-                  <Star className="h-4 w-4 mr-1" />
-                  <span>{bills.filter(b => b.watchlist).length} on watchlist</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Bill</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Sponsor</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Position</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Priority</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Client</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBills.map((bill) => (
-                      <tr key={bill.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-4 px-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono text-sm font-medium">{bill.bill_number}</span>
-                            {bill.watchlist && <Star className="h-4 w-4 text-yellow-500 fill-current" />}
-                          </div>
-                          <div className="mt-1">
-                            <p className="text-sm font-medium text-slate-900 truncate">{bill.title}</p>
-                            <p className="text-xs text-slate-500">{bill.last_action}</p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="text-sm text-slate-700">{bill.sponsor}</span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <Badge className={getStatusColor(bill.status)}>
-                            {bill.status}
+      {/* Bills Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bills ({filteredBills.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : filteredBills.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              No bills found. {searchTerm && 'Try adjusting your search terms.'}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredBills.map((bill) => (
+                <div key={bill.id} className="border rounded-lg p-4 hover:bg-slate-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="font-semibold text-lg">{bill.bill_number}</h3>
+                        <Badge className={getStatusColor(bill.status)}>
+                          {bill.status}
+                        </Badge>
+                        {bill.priority !== 'None' && (
+                          <Badge className={getPriorityColor(bill.priority)}>
+                            {bill.priority} Priority
                           </Badge>
-                        </td>
-                        <td className="py-4 px-4">
-                          <Badge className="bg-gray-100 text-gray-800 border-gray-200">
+                        )}
+                        {bill.position !== 'None' && (
+                          <Badge className={getPositionColor(bill.position)}>
                             {bill.position}
                           </Badge>
-                        </td>
-                        <td className="py-4 px-4">
-                          <Badge className={getPriorityColor(bill.priority)}>
-                            {bill.priority}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="text-sm text-slate-700">
-                            {bill.client_id ? clients.find(c => c.id === bill.client_id)?.name || 'Unknown' : 'No client'}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleExtractSponsors(bill)}
-                            disabled={actionLoading === bill.id}
-                            className="text-indigo-600 hover:text-indigo-700"
-                          >
-                            {actionLoading === bill.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Users className="h-4 w-4 mr-1" />
-                            )}
-                            Extract Sponsors
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+                        {bill.watchlist && (
+                          <Badge variant="outline">Watchlist</Badge>
+                        )}
+                      </div>
+                      <p className="text-slate-600 mb-2">{bill.title}</p>
+                      <div className="flex items-center space-x-4 text-sm text-slate-500">
+                        <span>Sponsor: {bill.sponsor}</span>
+                        <span>Last Action: {bill.last_action}</span>
+                        {bill.client_id && (
+                          <span>Client: {clients.find(c => c.id === bill.client_id)?.name || 'Unknown'}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleWatchlist(bill.id, bill.watchlist)}
+                      >
+                        <Star className={`h-4 w-4 ${bill.watchlist ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      </Button>
+                      <Select
+                        value={bill.priority}
+                        onValueChange={(value) => handleUpdatePriority(bill.id, value)}
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="None">None</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="Low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteBill(bill.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Bill Modal */}
+      <Dialog open={addBillOpen} onOpenChange={setAddBillOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Bill</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bill_number">Bill Number</Label>
+                <Input
+                  id="bill_number"
+                  value={newBill.bill_number}
+                  onChange={(e) => setNewBill({...newBill, bill_number: e.target.value})}
+                  placeholder="e.g., HB24-1001"
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </ProtectedRoute>
+              <div>
+                <Label htmlFor="sponsor">Sponsor</Label>
+                <Input
+                  id="sponsor"
+                  value={newBill.sponsor}
+                  onChange={(e) => setNewBill({...newBill, sponsor: e.target.value})}
+                  placeholder="e.g., Rep. Smith"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={newBill.title}
+                onChange={(e) => setNewBill({...newBill, title: e.target.value})}
+                placeholder="Bill title"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="last_action">Last Action</Label>
+              <Input
+                id="last_action"
+                value={newBill.last_action}
+                onChange={(e) => setNewBill({...newBill, last_action: e.target.value})}
+                placeholder="e.g., Introduced in House"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={newBill.status} onValueChange={(value: any) => setNewBill({...newBill, status: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Passed">Passed</SelectItem>
+                    <SelectItem value="Failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="position">Position</Label>
+                <Select value={newBill.position} onValueChange={(value: any) => setNewBill({...newBill, position: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="None">None</SelectItem>
+                    <SelectItem value="Support">Support</SelectItem>
+                    <SelectItem value="Monitor">Monitor</SelectItem>
+                    <SelectItem value="Oppose">Oppose</SelectItem>
+                    <SelectItem value="Hypothetical">Hypothetical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={newBill.priority} onValueChange={(value: any) => setNewBill({...newBill, priority: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="None">None</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="client_id">Client</Label>
+                <Select value={newBill.client_id} onValueChange={(value) => setNewBill({...newBill, client_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No client</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="watchlist"
+                checked={newBill.watchlist}
+                onChange={(e) => setNewBill({...newBill, watchlist: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="watchlist">Add to watchlist</Label>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setAddBillOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddBill} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+                )}
+                Add Bill
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </DashboardLayout>
   );
 }
