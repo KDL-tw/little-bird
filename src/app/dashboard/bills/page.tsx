@@ -27,7 +27,7 @@ import {
   SortDesc
 } from 'lucide-react';
 import { billsService, billNotesService, clientsService, userActionsService } from '@/lib/database';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import type { Bill, BillNote, Client } from '@/lib/supabase';
 

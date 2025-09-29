@@ -26,7 +26,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { clientsService, contactsService, userActionsService } from '@/lib/database';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import type { Client, Contact } from '@/lib/supabase';
 
