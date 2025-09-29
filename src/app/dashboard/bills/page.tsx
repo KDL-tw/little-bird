@@ -715,4 +715,3 @@ export default function BillsPage() {
       </div>
     </ProtectedRoute>
   );
-}
