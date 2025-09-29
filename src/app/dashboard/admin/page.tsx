@@ -14,7 +14,8 @@ import {
   FileText,
   Users,
   BarChart3,
-  Settings
+  Settings,
+  Globe
 } from "lucide-react";
 
 interface SyncResult {
