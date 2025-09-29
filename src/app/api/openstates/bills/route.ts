@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const subject = searchParams.get('subject');
 
     // Build OpenStates API URL (using official v3 endpoint)
-    let url = `https://v3.openstates.org/bills?per_page=20`;
+    let url = `https://v3.openstates.org/bills?per_page=20&_t=${Date.now()}`;
     
     // Add jurisdiction (state) - required parameter (use state abbreviation)
     if (state) {
@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
       status: response.status,
       dataType: typeof data,
       dataKeys: data ? Object.keys(data) : 'null',
-      dataLength: Array.isArray(data) ? data.length : 'not array'
+      dataLength: Array.isArray(data) ? data.length : 'not array',
+      url: url
     });
     
     // Handle OpenStates v3 API response format

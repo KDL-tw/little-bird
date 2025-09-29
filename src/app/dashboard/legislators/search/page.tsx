@@ -166,6 +166,12 @@ export default function SearchLegislatorsPage() {
                   Back to Legislators
                 </Button>
               </Link>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">Search Legislators</h1>
                 <p className="text-slate-600 mt-1">Find and add Colorado legislators from OpenStates</p>
