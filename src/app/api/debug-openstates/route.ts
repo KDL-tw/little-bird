@@ -4,8 +4,8 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = '7fffc14f-6f2d-4168-ac04-628867cec6b1';
     
-    // Test the API with v3 endpoint
-    const testUrl = `https://v3.openstates.org/bills?jurisdiction=co&per_page=3&apikey=${apiKey}`;
+    // Test the API with v3 endpoint (using full jurisdiction ID)
+    const testUrl = `https://v3.openstates.org/bills?jurisdiction=ocd-jurisdiction/country:us/state:co/government&per_page=3&apikey=${apiKey}`;
     
     console.log('Testing OpenStates API:', testUrl);
     

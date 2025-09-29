@@ -9,9 +9,18 @@ export async function GET(request: NextRequest) {
     // Build OpenStates API URL (using official v3 endpoint)
     let url = `https://v3.openstates.org/people?per_page=100`;
     
-    // Add jurisdiction (state) - required parameter
+    // Add jurisdiction (state) - required parameter (use full jurisdiction ID)
     if (state) {
-      url += `&jurisdiction=${state}`;
+      // Map state codes to full jurisdiction IDs
+      const jurisdictionMap: { [key: string]: string } = {
+        'co': 'ocd-jurisdiction/country:us/state:co/government',
+        'ca': 'ocd-jurisdiction/country:us/state:ca/government',
+        'ny': 'ocd-jurisdiction/country:us/state:ny/government',
+        'tx': 'ocd-jurisdiction/country:us/state:tx/government',
+        'fl': 'ocd-jurisdiction/country:us/state:fl/government'
+      };
+      const jurisdictionId = jurisdictionMap[state.toLowerCase()] || `ocd-jurisdiction/country:us/state:${state.toLowerCase()}/government`;
+      url += `&jurisdiction=${jurisdictionId}`;
     }
     
     if (query) {
