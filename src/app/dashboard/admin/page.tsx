@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const [billsSync, setBillsSync] = useState<SyncResult | null>(null);
   const [legislatorsSync, setLegislatorsSync] = useState<SyncResult | null>(null);
   const [testSync, setTestSync] = useState<SyncResult | null>(null);
+  const [simpleTest, setSimpleTest] = useState<SyncResult | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
   const syncBills = async () => {
@@ -84,6 +85,37 @@ export default function AdminDashboard() {
       });
     } finally {
       setLoading(null);
+    }
+  };
+
+  const testSimple = async () => {
+    setLoading('simple');
+    setSimpleTest(null);
+    
+    try {
+      const response = await fetch('/api/test-sync-simple', { method: 'POST' });
+      const result = await response.json();
+      setSimpleTest(result);
+    } catch (error) {
+      setSimpleTest({
+        success: false,
+        message: 'Failed to test simple sync',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const testEnvironment = async () => {
+    try {
+      const response = await fetch('/api/test-simple');
+      const result = await response.json();
+      console.log('Environment test:', result);
+      alert(`Environment test: ${JSON.stringify(result, null, 2)}`);
+    } catch (error) {
+      console.error('Environment test error:', error);
+      alert(`Environment test failed: ${error}`);
     }
   };
 
@@ -219,6 +251,83 @@ export default function AdminDashboard() {
                   )}
                   {legislatorsSync.error && (
                     <p className="text-sm mt-1">{legislatorsSync.error}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Debug Tests */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Globe className="h-5 w-5 mr-2" />
+                Environment Test
+              </CardTitle>
+              <CardDescription>
+                Check if environment variables are configured
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={testEnvironment}
+                className="w-full"
+                variant="outline"
+              >
+                <Globe className="h-4 w-4 mr-2" />
+                Test Environment
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Database className="h-5 w-5 mr-2" />
+                Simple Database Test
+              </CardTitle>
+              <CardDescription>
+                Test database connection with one record
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={testSimple} 
+                disabled={loading === 'simple'}
+                className="w-full"
+                variant="outline"
+              >
+                {loading === 'simple' ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-4 w-4 mr-2" />
+                    Test Database
+                  </>
+                )}
+              </Button>
+              
+              {simpleTest && (
+                <div className={`p-3 rounded-lg border ${
+                  simpleTest.success 
+                    ? 'bg-green-50 border-green-200 text-green-800' 
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}>
+                  <div className="flex items-center">
+                    {simpleTest.success ? (
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                    )}
+                    <span className="font-medium">{simpleTest.message}</span>
+                  </div>
+                  {simpleTest.error && (
+                    <p className="text-sm mt-1">{simpleTest.error}</p>
                   )}
                 </div>
               )}
