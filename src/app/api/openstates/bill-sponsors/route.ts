@@ -12,20 +12,14 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Build OpenStates API URL for specific bill
-    const url = `https://open.pluralpolicy.com/api/v1/bills/${billId}/`;
+            // Build OpenStates API URL for specific bill (using v3 endpoint)
+            const url = `https://v3.openstates.org/bills/${billId}?apikey=${process.env.NEXT_PUBLIC_OPENSTATES_API_KEY || '7fffc14f-6f2d-4168-ac04-628867cec6b1'}`;
 
-    // Make request to OpenStates API
-    const headers: HeadersInit = {
-      'Accept': 'application/json',
-      'User-Agent': 'LittleBird/1.0'
-    };
-
-    // Add API key if available
-    const apiKey = process.env.NEXT_PUBLIC_OPENSTATES_API_KEY || '7fffc14f-6f2d-4168-ac04-628867cec6b1';
-    if (apiKey) {
-      headers['X-API-Key'] = apiKey;
-    }
+            // Make request to OpenStates API
+            const headers: HeadersInit = {
+                'Accept': 'application/json',
+                'User-Agent': 'LittleBird/1.0'
+            };
 
     const response = await fetch(url, { headers });
 

@@ -6,11 +6,16 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state') || 'co';
     const query = searchParams.get('q');
 
-    // Build OpenStates API URL (updated to new domain)
-    let url = `https://open.pluralpolicy.com/api/v1/legislators/?state=${state}&per_page=100`;
+    // Build OpenStates API URL (using official v3 endpoint)
+    let url = `https://v3.openstates.org/people?per_page=100`;
+    
+    // Add jurisdiction (state) - required parameter
+    if (state) {
+      url += `&jurisdiction=${state}`;
+    }
     
     if (query) {
-      url += `&q=${encodeURIComponent(query)}`;
+      url += `&name=${encodeURIComponent(query)}`;
     }
 
     // Make request to OpenStates API
@@ -19,10 +24,10 @@ export async function GET(request: NextRequest) {
       'User-Agent': 'LittleBird/1.0'
     };
 
-    // Add API key if available
+    // Add API key if available (using apikey query parameter as per docs)
     const apiKey = process.env.NEXT_PUBLIC_OPENSTATES_API_KEY || '7fffc14f-6f2d-4168-ac04-628867cec6b1';
     if (apiKey) {
-      headers['X-API-Key'] = apiKey;
+      url += `&apikey=${apiKey}`;
     }
 
     const response = await fetch(url, { headers });
@@ -33,10 +38,19 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
+    // Handle OpenStates v3 API response format
+    let legislators = [];
+    if (data.results && Array.isArray(data.results)) {
+      legislators = data.results;
+    } else if (Array.isArray(data)) {
+      legislators = data;
+    }
+    
     return NextResponse.json({
       success: true,
-      data: data,
-      count: data.length
+      data: legislators,
+      count: legislators.length,
+      pagination: data.pagination || null
     });
 
   } catch (error) {

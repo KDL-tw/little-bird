@@ -4,14 +4,13 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = '7fffc14f-6f2d-4168-ac04-628867cec6b1';
     
-    // Test the API with different approaches
-    const testUrl = 'https://open.pluralpolicy.com/api/v1/bills/?state=co&per_page=3';
+    // Test the API with v3 endpoint
+    const testUrl = `https://v3.openstates.org/bills?jurisdiction=co&per_page=3&apikey=${apiKey}`;
     
     console.log('Testing OpenStates API:', testUrl);
     
     const response = await fetch(testUrl, {
       headers: {
-        'X-API-Key': apiKey,
         'Accept': 'application/json',
         'User-Agent': 'LittleBird/1.0'
       }
