@@ -12,7 +12,63 @@ const isSupabaseConfigured = () => {
 export const billsService = {
   async getAll(): Promise<Bill[]> {
     if (!isSupabaseConfigured()) {
-      return [];
+      // Return mock data when Supabase isn't configured
+      return [
+        {
+          id: 'mock-bill-1',
+          bill_number: 'HB24-1001',
+          title: 'Colorado Clean Energy Act',
+          sponsor: 'Rep. Julie McCluskie',
+          status: 'Active',
+          last_action: 'Passed House Committee on Energy',
+          position: 'Support',
+          ai_analysis: {
+            executive_summary: 'This bill establishes ambitious renewable energy targets for Colorado, requiring utilities to achieve 80% clean energy by 2030 and 100% by 2040.',
+            key_provisions: ['Sets 80% renewable energy target by 2030', 'Establishes 100% clean energy goal by 2040', 'Creates clean energy transition fund', 'Provides workforce development programs'],
+            stakeholder_impact: ['Utilities: Significant infrastructure investment required', 'Ratepayers: Potential short-term cost increases', 'Workers: Job creation in clean energy sector', 'Environment: Major reduction in carbon emissions'],
+            similar_bills: ['California SB 100 (2018)', 'New Mexico HB 50 (2019)', 'Nevada AB 206 (2019)'],
+            passage_likelihood: 75
+          },
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 'mock-bill-2',
+          bill_number: 'SB24-0123',
+          title: 'Healthcare Access Expansion',
+          sponsor: 'Sen. Faith Winter',
+          status: 'Active',
+          last_action: 'Introduced in Senate',
+          position: 'Monitor',
+          ai_analysis: {
+            executive_summary: 'Expands Medicaid eligibility and creates a public option for health insurance coverage in Colorado.',
+            key_provisions: ['Expands Medicaid to 138% of federal poverty level', 'Creates Colorado public option', 'Establishes prescription drug affordability board', 'Increases mental health coverage requirements'],
+            stakeholder_impact: ['Patients: Expanded access to affordable healthcare', 'Providers: Increased patient volume but lower reimbursement rates', 'Insurers: Competition from public option', 'State: Significant budget implications'],
+            similar_bills: ['Washington HB 1523 (2019)', 'Nevada SB 420 (2019)', 'Colorado HB 1234 (2023)'],
+            passage_likelihood: 60
+          },
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 'mock-bill-3',
+          bill_number: 'HB24-0456',
+          title: 'Criminal Justice Reform Act',
+          sponsor: 'Rep. Bob Gardner',
+          status: 'Active',
+          last_action: 'Passed House Judiciary Committee',
+          position: 'Oppose',
+          ai_analysis: {
+            executive_summary: 'Comprehensive criminal justice reform including bail reform, sentencing guidelines, and reentry programs.',
+            key_provisions: ['Eliminates cash bail for non-violent offenses', 'Establishes alternative sentencing programs', 'Creates reentry support services', 'Requires racial impact statements for new criminal laws'],
+            stakeholder_impact: ['Defendants: Reduced pretrial detention', 'Courts: Increased caseload management challenges', 'Law enforcement: Concerns about public safety', 'Communities: Potential reduction in incarceration rates'],
+            similar_bills: ['New Jersey S 2584 (2017)', 'Illinois HB 3653 (2021)', 'California AB 109 (2011)'],
+            passage_likelihood: 45
+          },
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        }
+      ];
     }
     
     const { data, error } = await supabase
@@ -72,7 +128,72 @@ export const billsService = {
 export const legislatorsService = {
   async getAll(): Promise<Legislator[]> {
     if (!isSupabaseConfigured()) {
-      return [];
+      // Return mock data when Supabase isn't configured
+      return [
+        {
+          id: 'mock-1',
+          name: 'Rep. Julie McCluskie',
+          district: 'HD-13',
+          party: 'D',
+          chamber: 'House',
+          committees: ['Appropriations', 'Education'],
+          phone: '(303) 866-2952',
+          email: 'julie.mccluskie@coleg.gov',
+          office: 'Room 271',
+          twitter_handle: '@JulieMcCluskie',
+          facebook_page: 'facebook.com/JulieMcCluskie',
+          website: 'julie.mccluskie.com',
+          relationship_score: 'High',
+          bills_sponsored: 8,
+          vote_alignment: 85,
+          last_contact: '2024-01-15',
+          topics_of_interest: ['Education', 'Healthcare', 'Environment'],
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 'mock-2',
+          name: 'Sen. Bob Gardner',
+          district: 'SD-12',
+          party: 'R',
+          chamber: 'Senate',
+          committees: ['Judiciary', 'Finance'],
+          phone: '(303) 866-4881',
+          email: 'bob.gardner@coleg.gov',
+          office: 'Room 200',
+          twitter_handle: '@BobGardnerCO',
+          facebook_page: 'facebook.com/BobGardnerCO',
+          website: 'bobgardner.com',
+          relationship_score: 'Medium',
+          bills_sponsored: 12,
+          vote_alignment: 45,
+          last_contact: '2024-01-12',
+          topics_of_interest: ['Criminal Justice', 'Fiscal Policy'],
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 'mock-3',
+          name: 'Rep. Faith Winter',
+          district: 'HD-35',
+          party: 'D',
+          chamber: 'House',
+          committees: ['Health & Insurance', 'Transportation'],
+          phone: '(303) 866-2582',
+          email: 'faith.winter@coleg.gov',
+          office: 'Room 200',
+          twitter_handle: '@FaithWinterCO',
+          facebook_page: 'facebook.com/FaithWinterCO',
+          website: 'faithwinter.com',
+          relationship_score: 'Low',
+          bills_sponsored: 5,
+          vote_alignment: 75,
+          last_contact: '2024-01-10',
+          topics_of_interest: ['Healthcare', 'Transportation'],
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        }
+      ];
     }
     
     const { data, error } = await supabase
