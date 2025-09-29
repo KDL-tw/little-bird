@@ -33,6 +33,7 @@ import Link from 'next/link';
 import type { Bill, BillNote, Client } from '@/lib/supabase';
 
 export default function BillsPage() {
+  // Clean bills page - recreated from scratch
   const { user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
