@@ -11,8 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Search, Plus, Star, AlertCircle, CheckCircle, Loader2, Users, ArrowRight } from 'lucide-react';
-import { userBillsService, clientsService } from '@/lib/user-services';
-import { adminRepositoryService } from '@/lib/user-services';
 import Link from 'next/link';
 
 export default function BillsPage() {
@@ -42,16 +40,44 @@ export default function BillsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // For now, show available bills from admin repository
-      const [billsData, clientsData] = await Promise.all([
-        adminRepositoryService.getRecentBills(20),
-        clientsService.getByUser('demo-user') // This will return empty until we have real users
-      ]);
-      setBills(billsData);
-      setClients(clientsData);
+      // Mock data for frontend development
+      const mockBills = [
+        {
+          id: '1',
+          bill_number: 'HB24-1001',
+          title: 'Colorado Energy Storage Tax Credit',
+          sponsor: 'Rep. Hansen',
+          status: 'Active',
+          last_action: 'Passed House Committee',
+          position: 'Support',
+          priority: 'High',
+          watchlist: true,
+          client_id: '1'
+        },
+        {
+          id: '2',
+          bill_number: 'SB24-0123',
+          title: 'Renewable Energy Standards Update',
+          sponsor: 'Sen. Martinez',
+          status: 'Active',
+          last_action: 'Introduced',
+          position: 'Monitor',
+          priority: 'Medium',
+          watchlist: false,
+          client_id: null
+        }
+      ];
+      
+      const mockClients = [
+        { id: '1', name: 'Clean Energy Coalition', type: 'Nonprofit' },
+        { id: '2', name: 'Tech Forward', type: 'Industry Group' }
+      ];
+      
+      setBills(mockBills);
+      setClients(mockClients);
     } catch (error) {
       console.error('Error loading data:', error);
-      setErrorMessage('Failed to load data. Please ensure the database is set up.');
+      setErrorMessage('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -60,9 +86,14 @@ export default function BillsPage() {
   const handleAddBill = async () => {
     try {
       setLoading(true);
-      // For now, just show a message since we need real user authentication
+      // Add new bill to mock data
+      const newBillData = {
+        id: Date.now().toString(),
+        ...newBill
+      };
+      setBills(prev => [...prev, newBillData]);
       setAddBillOpen(false);
-      setSuccessMessage('Bill tracking requires user authentication. Please sign in to track bills.');
+      setSuccessMessage('Bill added successfully!');
       setNewBill({
         bill_number: '',
         title: '',
@@ -85,7 +116,8 @@ export default function BillsPage() {
   const handleDeleteBill = async (id: string) => {
     if (confirm('Are you sure you want to delete this bill?')) {
       try {
-        setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
+        setBills(prev => prev.filter(bill => bill.id !== id));
+        setSuccessMessage('Bill deleted successfully!');
       } catch (error) {
         console.error('Error deleting bill:', error);
         setErrorMessage('Failed to delete bill');
@@ -95,7 +127,10 @@ export default function BillsPage() {
 
   const handleToggleWatchlist = async (id: string, currentWatchlist: boolean) => {
     try {
-      setSuccessMessage('Bill tracking requires user authentication. Please sign in to track bills.');
+      setBills(prev => prev.map(bill => 
+        bill.id === id ? { ...bill, watchlist: !currentWatchlist } : bill
+      ));
+      setSuccessMessage(`Bill ${!currentWatchlist ? 'added to' : 'removed from'} watchlist!`);
     } catch (error) {
       console.error('Error toggling watchlist:', error);
       setErrorMessage('Failed to update watchlist');
@@ -104,7 +139,10 @@ export default function BillsPage() {
 
   const handleUpdatePriority = async (id: string, priority: string) => {
     try {
-      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
+      setBills(prev => prev.map(bill => 
+        bill.id === id ? { ...bill, priority } : bill
+      ));
+      setSuccessMessage('Priority updated successfully!');
     } catch (error) {
       console.error('Error updating priority:', error);
       setErrorMessage('Failed to update priority');

@@ -28,7 +28,7 @@ import {
   Filter,
   FileText
 } from 'lucide-react';
-import { adminRepositoryService } from '@/lib/user-services';
+// Frontend-only - no database dependencies
 import Link from 'next/link';
 import type { Bill, Client } from '@/lib/supabase';
 
@@ -55,12 +55,43 @@ export default function MyBillsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [billsData, clientsData] = await Promise.all([
-        adminRepositoryService.getRecentBills(20),
-        [] // No clients until we have user authentication
-      ]);
-      setBills(billsData);
-      setClients(clientsData);
+      // Mock data for frontend development
+      const mockBills = [
+        {
+          id: '1',
+          bill_number: 'HB24-1001',
+          title: 'Colorado Energy Storage Tax Credit',
+          sponsor: 'Rep. Hansen',
+          status: 'Active',
+          last_action: 'Passed House Committee',
+          position: 'Support',
+          priority: 'High',
+          watchlist: true,
+          client_id: '1',
+          notes: 'Strong support from clean energy coalition'
+        },
+        {
+          id: '2',
+          bill_number: 'SB24-0123',
+          title: 'Renewable Energy Standards Update',
+          sponsor: 'Sen. Martinez',
+          status: 'Active',
+          last_action: 'Introduced',
+          position: 'Monitor',
+          priority: 'Medium',
+          watchlist: false,
+          client_id: null,
+          notes: 'Watching for amendments'
+        }
+      ];
+      
+      const mockClients = [
+        { id: '1', name: 'Clean Energy Coalition', type: 'Nonprofit' },
+        { id: '2', name: 'Tech Forward', type: 'Industry Group' }
+      ];
+      
+      setBills(mockBills);
+      setClients(mockClients);
     } catch (error) {
       console.error('Error loading data:', error);
       setErrorMessage('Failed to load bills');
@@ -90,12 +121,11 @@ export default function MyBillsPage() {
 
     try {
       setLoading(true);
-      // For now, just show a message since we need user authentication
-      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
-      
+      setBills(prev => prev.map(bill => 
+        bill.id === selectedBill.id ? { ...bill, ...editForm } : bill
+      ));
       setEditBillOpen(false);
       setSuccessMessage('Bill updated successfully!');
-      loadData();
     } catch (error) {
       console.error('Error updating bill:', error);
       setErrorMessage('Failed to update bill');
@@ -108,10 +138,8 @@ export default function MyBillsPage() {
     if (confirm('Are you sure you want to delete this bill from your tracking?')) {
       try {
         setLoading(true);
-        // For now, just show a message since we need user authentication
-      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
+        setBills(prev => prev.filter(bill => bill.id !== id));
         setSuccessMessage('Bill removed from tracking!');
-        loadData();
       } catch (error) {
         console.error('Error deleting bill:', error);
         setErrorMessage('Failed to delete bill');
@@ -123,10 +151,10 @@ export default function MyBillsPage() {
 
   const handleToggleWatchlist = async (id: string, currentWatchlist: boolean) => {
     try {
-      // For now, just show a message since we need user authentication
-      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
+      setBills(prev => prev.map(bill => 
+        bill.id === id ? { ...bill, watchlist: !currentWatchlist } : bill
+      ));
       setSuccessMessage(`Bill ${!currentWatchlist ? 'added to' : 'removed from'} watchlist!`);
-      loadData();
     } catch (error) {
       console.error('Error toggling watchlist:', error);
       setErrorMessage('Failed to update watchlist');
@@ -135,10 +163,10 @@ export default function MyBillsPage() {
 
   const handleUpdatePriority = async (id: string, priority: string) => {
     try {
-      // For now, just show a message since we need user authentication
-      setSuccessMessage('Bill management requires user authentication. Please sign in to manage bills.');
+      setBills(prev => prev.map(bill => 
+        bill.id === id ? { ...bill, priority } : bill
+      ));
       setSuccessMessage('Priority updated successfully!');
-      loadData();
     } catch (error) {
       console.error('Error updating priority:', error);
       setErrorMessage('Failed to update priority');

@@ -23,7 +23,7 @@ import {
   Search,
   BarChart3
 } from "lucide-react";
-import { adminRepositoryService } from "@/lib/user-services";
+// Frontend-only - no database dependencies
 
 export default function Dashboard() {
   const [platformOverviewOpen, setPlatformOverviewOpen] = useState(false);
@@ -38,12 +38,9 @@ export default function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [bills, legislators] = await Promise.all([
-        adminRepositoryService.getRecentBills(10),
-        adminRepositoryService.getRecentLegislators(10)
-      ]);
-      setBillsCount(bills.length);
-      setLegislatorsCount(legislators.length);
+      // Mock data for frontend development
+      setBillsCount(12);
+      setLegislatorsCount(8);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       // Keep default values on error

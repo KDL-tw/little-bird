@@ -35,7 +35,7 @@ import {
   CheckCircle,
   ArrowRight
 } from "lucide-react";
-import { adminRepositoryService } from "@/lib/user-services";
+// Frontend-only - no database dependencies
 import type { Legislator, Note, Meeting, Aide, Associate, AffinityGroup } from "@/lib/supabase";
 
 interface LegislatorWithRelations extends Legislator {
@@ -67,10 +67,52 @@ export default function LegislatorsCRM() {
   const loadLegislators = async () => {
     try {
       setLoading(true);
-      const data = await adminRepositoryService.getRecentLegislators(20);
-      setLegislators(data);
+      // Mock data for frontend development
+      const mockLegislators = [
+        {
+          id: '1',
+          name: 'Rep. Sarah Hansen',
+          district: 'HD-23',
+          party: 'Democrat',
+          chamber: 'House',
+          committee_assignments: ['Energy & Environment', 'Transportation'],
+          phone: '(303) 866-2952',
+          email: 'sarah.hansen@coleg.gov',
+          office_location: 'Room 271',
+          relationship_score: 'High',
+          bills_sponsored: 8,
+          vote_alignment: 85,
+          last_contact: '2024-01-15',
+          notes: [],
+          meetings: [],
+          aides: [],
+          associates: [],
+          affinity_groups: []
+        },
+        {
+          id: '2',
+          name: 'Sen. Michael Rodriguez',
+          district: 'SD-12',
+          party: 'Republican',
+          chamber: 'Senate',
+          committee_assignments: ['Finance', 'Health & Human Services'],
+          phone: '(303) 866-4861',
+          email: 'michael.rodriguez@coleg.gov',
+          office_location: 'Room 200',
+          relationship_score: 'Medium',
+          bills_sponsored: 12,
+          vote_alignment: 45,
+          last_contact: '2024-01-10',
+          notes: [],
+          meetings: [],
+          aides: [],
+          associates: [],
+          affinity_groups: []
+        }
+      ];
+      setLegislators(mockLegislators);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load legislators. Please ensure the database is set up.');
+      setError(err instanceof Error ? err.message : 'Failed to load legislators.');
     } finally {
       setLoading(false);
     }

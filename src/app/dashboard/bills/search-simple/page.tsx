@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Search, ArrowLeft, Loader2, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { adminRepositoryService } from '@/lib/user-services';
+// Frontend-only - no database dependencies
 
 interface OpenStatesBill {
   id: string;
