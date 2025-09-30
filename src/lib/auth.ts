@@ -1,13 +1,5 @@
-// Supabase Authentication Service
-import { supabase } from './supabase';
-import type { User, Session } from '@supabase/supabase-js';
-
-// Check if Supabase is properly configured
-const isSupabaseConfigured = () => {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL && 
-         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-         process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
-};
+// Frontend-only Authentication Service
+// No external dependencies - all mock data
 
 export interface AuthUser {
   id: string;
@@ -18,188 +10,58 @@ export interface AuthUser {
   updated_at: string;
 }
 
-export interface SignUpData {
-  email: string;
-  password: string;
-  name?: string;
-}
-
-export interface SignInData {
-  email: string;
-  password: string;
-}
-
-export class AuthService {
-  // Sign up with email and password
-  async signUp(data: SignUpData): Promise<{ user: User | null; error: Error | null }> {
-    if (!isSupabaseConfigured()) {
-      return { user: null, error: new Error('Supabase not configured') };
-    }
-    
-    try {
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            name: data.name || data.email.split('@')[0]
-          }
-        }
-      });
-
-      if (error) {
-        console.error('Sign up error:', error);
-        return { user: null, error };
-      }
-
-      console.log('✅ User signed up successfully:', authData.user?.email);
-      return { user: authData.user, error: null };
-    } catch (error) {
-      console.error('Sign up error:', error);
-      return { user: null, error: error as Error };
-    }
-  }
-
-  // Sign in with email and password
-  async signIn(data: SignInData): Promise<{ user: User | null; error: Error | null }> {
-    if (!isSupabaseConfigured()) {
-      return { user: null, error: new Error('Supabase not configured') };
-    }
-    
-    try {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password
-      });
-
-      if (error) {
-        console.error('Sign in error:', error);
-        return { user: null, error };
-      }
-
-      console.log('✅ User signed in successfully:', authData.user?.email);
-      return { user: authData.user, error: null };
-    } catch (error) {
-      console.error('Sign in error:', error);
-      return { user: null, error: error as Error };
-    }
-  }
-
-  // Sign out
-  async signOut(): Promise<{ error: Error | null }> {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Sign out error:', error);
-        return { error };
-      }
-
-      console.log('✅ User signed out successfully');
-      return { error: null };
-    } catch (error) {
-      console.error('Sign out error:', error);
-      return { error: error as Error };
-    }
-  }
-
-  // Get current user
-  async getCurrentUser(): Promise<User | null> {
-    if (!isSupabaseConfigured()) {
-      return null;
-    }
-    
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error) {
-        console.error('Get user error:', error);
-        return null;
-      }
-
-      return user;
-    } catch (error) {
-      console.error('Get user error:', error);
-      return null;
-    }
-  }
-
-  // Get current session
-  async getCurrentSession(): Promise<Session | null> {
-    if (!isSupabaseConfigured()) {
-      return null;
-    }
-    
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Get session error:', error);
-        return null;
-      }
-
-      return session;
-    } catch (error) {
-      console.error('Get session error:', error);
-      return null;
-    }
-  }
-
-  // Listen to auth state changes
-  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
-    if (!isSupabaseConfigured()) {
-      // Return a mock subscription that does nothing
+export const authService = {
+  // Mock authentication methods
+  async getCurrentSession() {
+    // Check for admin bypass
+    const adminBypass = sessionStorage.getItem('adminBypass');
+    if (adminBypass === 'true') {
       return {
-        data: {
-          subscription: {
-            unsubscribe: () => {}
-          }
-        }
+        user: {
+          id: 'admin',
+          email: 'admin@littlebird.com',
+          name: 'Admin User'
+        },
+        access_token: 'mock-token'
       };
     }
-    
-    return supabase.auth.onAuthStateChange(callback);
-  }
+    return null;
+  },
 
-  // Reset password
-  async resetPassword(email: string): Promise<{ error: Error | null }> {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
-
-      if (error) {
-        console.error('Reset password error:', error);
-        return { error };
-      }
-
-      console.log('✅ Password reset email sent to:', email);
-      return { error: null };
-    } catch (error) {
-      console.error('Reset password error:', error);
-      return { error: error as Error };
+  async signIn({ email, password }: { email: string; password: string }) {
+    // Mock authentication
+    if (email === 'admin@littlebird.com' && password === 'admin') {
+      const user = {
+        id: 'admin',
+        email: 'admin@littlebird.com',
+        name: 'Admin User'
+      };
+      sessionStorage.setItem('adminBypass', 'true');
+      return { user, error: null };
     }
-  }
+    return { user: null, error: new Error('Invalid credentials') };
+  },
 
-  // Update user profile
-  async updateProfile(updates: { name?: string; avatar_url?: string }): Promise<{ user: User | null; error: Error | null }> {
-    try {
-      const { data, error } = await supabase.auth.updateUser({
-        data: updates
-      });
+  async signUp({ email, password, name }: { email: string; password: string; name?: string }) {
+    return { user: null, error: new Error('Registration not available in demo mode') };
+  },
 
-      if (error) {
-        console.error('Update profile error:', error);
-        return { user: null, error };
+  async signOut() {
+    sessionStorage.removeItem('adminBypass');
+  },
+
+  async resetPassword(email: string) {
+    return { error: new Error('Password reset not available in demo mode') };
+  },
+
+  onAuthStateChange(callback: (event: string, session: any) => void) {
+    // Mock auth state change listener
+    return {
+      data: {
+        subscription: {
+          unsubscribe: () => {}
+        }
       }
-
-      console.log('✅ Profile updated successfully');
-      return { user: data.user, error: null };
-    } catch (error) {
-      console.error('Update profile error:', error);
-      return { user: null, error: error as Error };
-    }
+    };
   }
-}
-
-export const authService = new AuthService();
+};

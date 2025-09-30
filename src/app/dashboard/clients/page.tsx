@@ -31,7 +31,31 @@ import {
 import { clientsDataService, contactsDataService, userActionsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import type { Client, Contact } from '@/lib/supabase';
+// Frontend-only types
+interface Client {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  type: string;
+  email?: string;
+  phone?: string;
+  organization?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function ClientsPage() {
   const { user } = useAuth();

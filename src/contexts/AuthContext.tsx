@@ -2,8 +2,18 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { authService } from '@/lib/auth';
-import type { User, Session } from '@supabase/supabase-js';
+
+// Frontend-only authentication
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
+interface Session {
+  user: User;
+  access_token: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -20,67 +30,61 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const session = await authService.getCurrentSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = authService.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Only redirect on explicit sign out, not on initial load
-        if (event === 'SIGNED_OUT' && session === null) {
-          // Only redirect if we're not on a dashboard page and no admin bypass
-          const currentPath = window.location.pathname;
-          const isDashboardPage = currentPath.startsWith('/dashboard');
-          const adminBypass = sessionStorage.getItem('adminBypass');
-          
-          if (!isDashboardPage && !adminBypass) {
-            router.push('/login');
-          }
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [router]);
+    // Frontend-only: Check for admin bypass
+    const adminBypass = sessionStorage.getItem('adminBypass');
+    if (adminBypass === 'true') {
+      const mockUser: User = {
+        id: 'admin',
+        email: 'admin@littlebird.com',
+        name: 'Admin User'
+      };
+      const mockSession: Session = {
+        user: mockUser,
+        access_token: 'mock-token'
+      };
+      setUser(mockUser);
+      setSession(mockSession);
+    }
+  }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { user, error } = await authService.signIn({ email, password });
-    return { error };
+    // Frontend-only: Mock authentication
+    if (email === 'admin@littlebird.com' && password === 'admin') {
+      const mockUser: User = {
+        id: 'admin',
+        email: 'admin@littlebird.com',
+        name: 'Admin User'
+      };
+      const mockSession: Session = {
+        user: mockUser,
+        access_token: 'mock-token'
+      };
+      setUser(mockUser);
+      setSession(mockSession);
+      sessionStorage.setItem('adminBypass', 'true');
+      return { error: null };
+    }
+    return { error: new Error('Invalid credentials') };
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
-    const { user, error } = await authService.signUp({ email, password, name });
-    return { error };
+    // Frontend-only: Mock registration
+    return { error: new Error('Registration not available in demo mode') };
   };
 
   const signOut = async () => {
-    await authService.signOut();
+    setUser(null);
+    setSession(null);
+    sessionStorage.removeItem('adminBypass');
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await authService.resetPassword(email);
-    return { error };
+    // Frontend-only: Mock password reset
+    return { error: new Error('Password reset not available in demo mode') };
   };
 
   const value = {

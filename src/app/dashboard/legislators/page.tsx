@@ -36,7 +36,52 @@ import {
   ArrowRight
 } from "lucide-react";
 // Frontend-only - no database dependencies
-import type { Legislator, Note, Meeting, Aide, Associate, AffinityGroup } from "@/lib/supabase";
+// Frontend-only types
+interface Legislator {
+  id: string;
+  name: string;
+  district: string;
+  party: string;
+  chamber: string;
+  committee_assignments: string[];
+  phone: string;
+  email: string;
+  office_location: string;
+  relationship_score: string;
+  bills_sponsored: number;
+  vote_alignment: number;
+  last_contact: string;
+}
+
+interface Note {
+  id: string;
+  content: string;
+  created_at: string;
+}
+
+interface Meeting {
+  id: string;
+  date: string;
+  notes: string;
+}
+
+interface Aide {
+  id: string;
+  name: string;
+  role: string;
+}
+
+interface Associate {
+  id: string;
+  name: string;
+  relationship: string;
+}
+
+interface AffinityGroup {
+  id: string;
+  name: string;
+  type: string;
+}
 
 interface LegislatorWithRelations extends Legislator {
   notes: Note[];

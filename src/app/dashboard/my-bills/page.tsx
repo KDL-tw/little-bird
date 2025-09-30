@@ -30,7 +30,26 @@ import {
 } from 'lucide-react';
 // Frontend-only - no database dependencies
 import Link from 'next/link';
-import type { Bill, Client } from '@/lib/supabase';
+// Frontend-only types
+interface Bill {
+  id: string;
+  bill_number: string;
+  title: string;
+  sponsor: string;
+  status: string;
+  last_action: string;
+  position: string;
+  priority: string;
+  watchlist: boolean;
+  client_id?: string;
+  notes?: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  type: string;
+}
 
 export default function MyBillsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
