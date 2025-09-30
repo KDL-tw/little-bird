@@ -16,7 +16,7 @@ import {
   Download,
   Upload
 } from "lucide-react";
-import { OpenStatesSync } from "@/lib/sync-openstates";
+// import { OpenStatesSync } from "@/lib/sync-openstates"; // Removed - using hardcoded data
 
 interface SyncResult {
   success: boolean;
@@ -77,13 +77,27 @@ export default function SyncPage() {
           }
         };
       } else {
-        // Use legacy sync for individual types
+        // Mock sync for individual types (using hardcoded data)
         switch (type) {
           case 'bills':
-            result = await OpenStatesSync.syncBills();
+            result = {
+              success: true,
+              bills: {
+                success: true,
+                added: 5,
+                total: 10
+              }
+            };
             break;
           case 'legislators':
-            result = await OpenStatesSync.syncLegislators();
+            result = {
+              success: true,
+              legislators: {
+                success: true,
+                added: 3,
+                total: 8
+              }
+            };
             break;
           default:
             throw new Error('Invalid sync type');

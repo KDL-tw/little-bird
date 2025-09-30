@@ -33,7 +33,22 @@ import {
 import { contactsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import type { Contact } from '@/lib/supabase';
+// Contact interface defined locally
+interface Contact {
+  id: string;
+  name: string;
+  title?: string;
+  organization?: string;
+  contact_type: 'Legislator' | 'Aide' | 'Lobbyist' | 'Stakeholder' | 'Staff' | 'Other';
+  email: string;
+  phone: string;
+  office_location?: string;
+  relationship_strength: 'High' | 'Medium' | 'Low' | 'None';
+  notes?: string;
+  issue_tags?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
 
 interface IssueTag {
   id: string;

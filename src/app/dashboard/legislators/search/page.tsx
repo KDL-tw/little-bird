@@ -15,7 +15,27 @@ import { legislatorsDataService } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Link from 'next/link';
-import type { Legislator } from '@/lib/supabase';
+// Legislator interface defined locally
+interface Legislator {
+  id: string;
+  name: string;
+  district: string;
+  party: string;
+  chamber: string;
+  committee_assignments: string[];
+  phone: string;
+  email: string;
+  office_location: string;
+  relationship_score: 'High' | 'Medium' | 'Low' | 'None';
+  bills_sponsored: number;
+  vote_alignment: number;
+  last_contact: string;
+  notes: any[];
+  meetings: any[];
+  aides: any[];
+  associates: any[];
+  affinity_groups: any[];
+}
 
 interface OpenStatesLegislator {
   id: string;
